@@ -19,12 +19,17 @@ classifiers = [
 ]
 dependencies = [
     "flask>=3.1.0",
+    "ipykernel>=6.29.5",
     "isort>=6.0.1",
     "joblib>=1.4.2",
+    "matplotlib>=3.9.4",
     "numpy>=2.0.2",
     "pandas>=2.2.3",
+    "plotly>=6.0.0",
     "pyodbc>=5.2.0",
     "scikit-learn>=1.6.1",
+    "seaborn>=0.13.2",
+    "xgboost>=2.1.4",
 ]
 
 [project.urls]

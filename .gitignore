@@ -1,6 +1,7 @@
 docs/source
 models/*
 data/*
+datasets/*
 
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 

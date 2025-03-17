@@ -3,5 +3,9 @@ pyodbc
 pandas
 numpy
 scikit-learn
+matplotlib
+seaborn
+xgboost
+catboost
 joblib
 isort
