@@ -5,7 +5,7 @@ description = "This is a simple project which applies machine learning to predic
 authors = [{ name = "minhquana1906", email = "quann1906@gmail.com" }]
 readme = "README.md"
 keywords = ['python']
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.12,<4.0"
 classifiers = [
     "Intended Audience :: Developers",
     "Programming Language :: Python",
