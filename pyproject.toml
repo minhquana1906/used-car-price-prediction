@@ -27,6 +27,7 @@ dependencies = [
     "matplotlib>=3.9.4",
     "numpy==1.26.4",
     "pandas>=2.2.3",
+    "plotly>=6.0.1",
     "pyodbc>=5.2.0",
     "scikit-learn==1.2.2",
     "seaborn>=0.13.2",

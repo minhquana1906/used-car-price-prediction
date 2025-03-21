@@ -36,78 +36,6 @@ def load_dataset(cfg: DictConfig) -> pd.DataFrame:
 
 
 @timer
-def translate_columns(data: pd.DataFrame) -> pd.DataFrame:
-    """Translate values of 'fuelType' and 'vehicleType' columns from German to English manually
-
-    Args:
-        data (pd.DataFrame): Raw dataset
-        columns (dict): Dictionary containing the columns to translate
-
-    Returns:
-        pd.DataFrame: Dataset with translated columns
-    """
-    logger.info("Translating values in column 'fuelType' and 'vehicleType'...")
-    data["fuelType"] = data["fuelType"].map(
-        {
-            "benzin": "petrol",
-            "diesel": "diesel",
-            "lpg": "lpg",
-            "cng": "cng",
-            "hybrid": "hybrid",
-            "elektro": "electric",
-            "andere": "other",
-        }
-    )
-    data["vehicleType"] = data["vehicleType"].map(
-        {
-            "limousine": "sedan",
-            "kleinwagen": "small car",
-            "kombi": "station wagon",
-            "bus": "bus",
-            "cabrio": "convertible",
-            "coupe": "coupe",
-            "suv": "suv",
-            "andere": "other",
-        }
-    )
-    model_mapping = {
-        "3er": "3_series",
-        "1er": "1_series",
-        "5er": "5_series",
-        "7er": "7_series",
-        "6er": "6_series",
-        "4_reihe": "4_series",
-        "2_reihe": "2_series",
-        "1_reihe": "1_series",
-        "5_reihe": "5_series",
-        "6_reihe": "6_series",
-        "3_reihe": "3_series",
-        "x_reihe": "x_series",
-        "z_reihe": "z_series",
-        "m_reihe": "m_series",
-        "i_reihe": "i_series",
-        "cr_reihe": "cr_series",
-        "a_klasse": "a_class",
-        "b_klasse": "b_class",
-        "c_klasse": "c_class",
-        "e_klasse": "e_class",
-        "s_klasse": "s_class",
-        "m_klasse": "m_class",
-        "g_klasse": "g_class",
-        "v_klasse": "v_class",
-        "yaris": "yaris",
-        "xc_reihe": "xc_series",
-        "900": "saab_900",
-        "9000": "saab_9000",
-        "andere": "other",
-    }
-
-    data["model"] = data["model"].replace(model_mapping)
-    logger.success("Columns translated successfully.")
-    return data
-
-
-@timer
 def drop_columns(data: pd.DataFrame, cfg: DictConfig) -> pd.DataFrame:
     """Drop redundant columns from the dataset
 
@@ -320,7 +248,6 @@ def preprocess_pipeline(cfg: DictConfig):
     try:
         # Load and preprocess data
         data = load_dataset(cfg)
-        data = translate_columns(data)
         data = drop_columns(data, cfg)
         data = convert_to_binary(data)
 
