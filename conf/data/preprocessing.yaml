@@ -1,0 +1,46 @@
+columns_to_drop:
+  - index
+  - name
+  - seller
+  - offerType
+  - abtest
+  - dateCrawled
+  - monthOfRegistration
+  - yearOfRegistration
+  - postalCode
+  - dateCreated
+  - lastSeen
+  - nrOfPictures
+
+target: price
+test_size: 0.2
+random_state: 15
+
+# Outlier processing
+outlier_features:
+  - powerPS
+  # - kilometer
+  # - age
+outlier_method: IQR
+outlier_threshold: 1.5  # IQR multiplier
+
+# Features for preprocessing
+numerical_features:
+  - powerPS
+  - kilometer
+  - age
+  # - gearbox
+  # - notRepairedDamage
+numerical_features_quantile:
+  - kilometer
+numerical_features_boxcox:
+  - powerPS
+  - age
+categorical_features:
+  - vehicleType
+  - model
+  - fuelType
+  - brand
+
+# PCA settings
+pca_components: 0.95

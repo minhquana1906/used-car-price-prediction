@@ -1,0 +1,27 @@
+defaults:
+  - _self_
+  - data: preprocessing
+  - model: modeling
+  - training: train
+  - tuning: hyperparameter_tuning
+
+paths:
+  root_path: "${hydra:runtime.cwd}"
+  data_path: "${paths.root_path}/data"
+  dataset_path: ${paths.root_path}/datasets
+  raw_data_path: "${paths.data_path}/raw"
+  processed_data_path: "${paths.data_path}/processed"
+  models_path: "${paths.root_path}/models"
+  notebooks_path: "${paths.root_path}/notebooks"
+  config_path: "${paths.root_path}/conf"
+  logs_path: "${paths.root_path}/logs"
+  metrics_path: "${paths.logs_path}/metrics"
+  reports_path: "${paths.logs_path}/reports"
+  predictions_path: ${paths.logs_path}/predictions
+
+  # File paths
+  dataset_file_path: ${paths.dataset_path}/autos.csv
+  train_file_path: "${paths.processed_data_path}/train.csv"
+  test_file_path: "${paths.processed_data_path}/test.csv"
+  model_file_path: "${paths.models_path}/${model.name}.pkl"
+  preprocessor_file_path: "${paths.models_path}/preprocessor.pkl"

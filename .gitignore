@@ -1,7 +1,10 @@
 docs/source
+logs/*
 models/*
+outputs/*
 data/*
-datasets/*
+
+
 
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 

@@ -1,0 +1,19 @@
+# tuning:
+cv_folds: 5
+scoring: r2
+n_trials: 30
+timeout: 1200
+
+early_stopping_rounds: 10
+
+models:
+  xgboost:
+    n_estimators: [50, 300, 500, 600, 800]
+    max_depth: [8, 10, 12, 15]
+    learning_rate: [0.0001, 0.02, 0.05, 0.08, 0.5]
+    subsample: [0.7, 0.8]
+    colsample_bytree: [0.9]
+    random_state: [15, 42, 100]
+    tree_method: "hist"
+    predictor: "auto"
+    grow_policy: "depthwise"

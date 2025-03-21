@@ -1,0 +1,9 @@
+test_size: 0.2
+random_state: 42
+cv_folds: 5
+metrics:
+  - r2
+  - neg_mean_squared_error
+  - neg_mean_absolute_error
+  - explained_variance
+  - max_error
