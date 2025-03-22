@@ -3,12 +3,10 @@ from datetime import datetime
 
 import hydra
 import pandas as pd
-from joblib import dump
 from loguru import logger
 from omegaconf import DictConfig
 from sklearn.compose import ColumnTransformer
 from sklearn.decomposition import PCA
-from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (OneHotEncoder, PowerTransformer,
                                    QuantileTransformer, StandardScaler)
@@ -35,38 +33,6 @@ def load_dataset(cfg: DictConfig) -> pd.DataFrame:
 
 
 @timer
-def drop_columns(data: pd.DataFrame, cfg: DictConfig) -> pd.DataFrame:
-    """Drop redundant columns from the dataset
-
-    Args:
-        data (pd.DataFrame): Raw dataset
-        columns (list): List of columns to drop
-
-    Returns:
-        pd.DataFrame: Dataset without the redundant columns
-    """
-    target = cfg.data.target
-    col_to_drop = cfg.data.columns_to_drop
-
-    # Create `age` column before dropping `yearOfRegistration`
-    logger.info("Creating `age` column...")
-    data["age"] = datetime.now().year - data["yearOfRegistration"]
-    logger.success("`age` column created successfully.")
-
-    logger.info("Dropping redundant columns...")
-    data.dropna(inplace=True)
-
-    data = data[data[target].between(200, 20_000)]
-    data = data[(data["powerPS"] > 0) & (data["powerPS"] <= 1000)]
-    data = data[data["fuelType"] != "Other"]
-    data = data[data["notRepairedDamage"] != "NaN"]
-
-    data.drop(col_to_drop, axis=1, inplace=True)
-    logger.success("Redundant columns dropped successfully.")
-    return data
-
-
-@timer
 def convert_to_binary(data: pd.DataFrame) -> pd.DataFrame:
     """Convert some categorical columns which have only two unique values to binary
 
@@ -86,25 +52,34 @@ def convert_to_binary(data: pd.DataFrame) -> pd.DataFrame:
 
 
 @timer
-def split_data(data: pd.DataFrame, cfg: DictConfig) -> tuple:
-    """Split the dataset into training and testing sets
+def drop_columns(data: pd.DataFrame, cfg: DictConfig) -> pd.DataFrame:
+    """Drop redundant columns from the dataset
 
     Args:
-        data (pd.DataFrame): Dataset
-        cfg (DictConfig): Configuration object
+        data (pd.DataFrame): Raw dataset
+        columns (list): List of columns to drop
 
     Returns:
-        tuple: Training and testing sets
+        pd.DataFrame: Dataset without the redundant columns
     """
-    logger.info("Splitting the dataset...")
     target = cfg.data.target
-    test_size = cfg.data.test_size
-    random_state = cfg.data.random_state
+    col_to_drop = cfg.data.columns_cleanup
 
-    X = data.drop(target, axis=1)
-    y = data[target]
-    logger.success("Dataset split successfully.")
-    return train_test_split(X, y, test_size=test_size, random_state=random_state)
+    logger.info("Creating `age` column...")
+    data["age"] = datetime.now().year - data["yearOfRegistration"]
+    logger.success("`age` column created successfully.")
+
+    logger.info("Dropping redundant columns...")
+    data.dropna(inplace=True)
+
+    data = data[data[target].between(200, 20_000)]
+    data = data[(data["powerPS"] > 0) & (data["powerPS"] <= 1000)]
+    data = data[data["fuelType"] != "Other"]
+    data = data[data["notRepairedDamage"] != "NaN"]
+
+    data.drop(col_to_drop, axis=1, inplace=True)
+    logger.success("Redundant columns dropped successfully.")
+    return data
 
 
 @timer
@@ -141,7 +116,6 @@ def create_preprocessor(cfg: DictConfig) -> Pipeline:
 
     outlier_clipper = OutlierClipper(columns=outlier_features, factor=outlier_threshold)
 
-    # positive_transformer = FunctionTransformer(ensure_positive)
     boxcox_pipeline = Pipeline(
         steps=[
             ("boxcox_transform", PowerTransformer(method="box-cox", standardize=True)),
@@ -188,7 +162,28 @@ def create_preprocessor(cfg: DictConfig) -> Pipeline:
 
 
 @timer
-def save_datasets(X_train, X_test, y_train, y_test, cfg: DictConfig):
+def binary_to_category(data: pd.DataFrame) -> pd.DataFrame:
+    """Convert some categorical columns from binary to categorical
+
+    Args:
+        data (pd.DataFrame): Dataset
+
+    Returns:
+        pd.DataFrame: Dataset with binary columns
+    """
+    logger.info(
+        "Converting values of 'notRepairedDamage' and 'gearbox' from binary to categorical..."
+    )
+    data["notRepairedDamage"] = (
+        data["notRepairedDamage"].dropna().map({1: "Yes", 0: "No"}).astype(str)
+    )
+    data["gearbox"] = data["gearbox"].map({1: "Automatic", 0: "Manual"}).astype(str)
+    logger.success("Columns converted to categorical successfully.")
+    return data
+
+
+@timer
+def save_datasets(data: pd.DataFrame, cfg: DictConfig):
     """Save the training and testing datasets to CSV files
 
     Args:
@@ -199,45 +194,15 @@ def save_datasets(X_train, X_test, y_train, y_test, cfg: DictConfig):
         cfg (DictConfig): Configuration object
     """
     logger.info("Saving datasets to CSV files...")
-    data_dir = cfg.paths.data_path
-    processed_dir = cfg.paths.processed_data_path
-    train_path = cfg.paths.train_file_path
-    test_path = cfg.paths.test_file_path
+    dataset_path = cfg.paths.cleaned_data_file_path
 
-    os.makedirs(os.path.dirname(data_dir), exist_ok=True)
-    os.makedirs(os.path.dirname(processed_dir), exist_ok=True)
-    os.makedirs(os.path.dirname(train_path), exist_ok=True)
-    os.makedirs(os.path.dirname(test_path), exist_ok=True)
+    os.makedirs(os.path.dirname(dataset_path), exist_ok=True)
+    data.to_csv(dataset_path, index=False)
 
-    train_df = X_train.copy()
-    train_df[cfg.data.target] = y_train
-    train_df.to_csv(train_path, index=False)
-
-    test_df = X_test.copy()
-    test_df[cfg.data.target] = y_test
-    test_df.to_csv(test_path, index=False)
-
-    logger.info(f"Datasets saved to {train_path} and {test_path}")
+    logger.info(f"Cleaned dataset saved to {dataset_path}")
 
 
-@timer
-def save_preprocessor(preprocessor: Pipeline, cfg: DictConfig):
-    """Save the preprocessor pipeline to a file
-
-    Args:
-        preprocessor (Pipeline): Preprocessor pipeline
-        cfg (DictConfig): Configuration object
-    """
-    preprocessor_path = cfg.paths.preprocessor_file_path
-    directory = os.path.dirname(preprocessor_path)
-    os.makedirs(directory, exist_ok=True)
-
-    logger.info(f"Saving preprocessor to {preprocessor_path}")
-    dump(preprocessor, preprocessor_path)
-    logger.success(f"Preprocessor saved to {preprocessor_path}")
-
-
-@hydra.main(config_path="../../conf", config_name="config", version_base=None)
+@hydra.main(config_path="../conf", config_name="config", version_base=None)
 def preprocess_pipeline(cfg: DictConfig):
     """Main function to process the dataset"""
     logger.info("Starting preprocessing pipeline...")
@@ -252,21 +217,15 @@ def preprocess_pipeline(cfg: DictConfig):
         logger.info(f"Available columns after preprocessing: {data.columns.tolist()}")
         logger.info(f"Sample data types: {data.dtypes}")
 
-        # Split data
-        X_train, X_test, y_train, y_test = split_data(data, cfg)
-        logger.info(
-            f"Training set shape: {X_train.shape}, Test set shape: {X_test.shape}"
-        )
-
         # Create and fit preprocessor
         preprocessor = create_preprocessor(cfg)
         logger.info("Fitting preprocessor to training data...")
-        preprocessor.fit(X_train)
-        logger.info("Preprocessor fitted successfully")
+        preprocessor.fit_transform(data)
+        logger.success("Preprocessor fit and transformed successfully.")
 
+        data = binary_to_category(data)
         # Save outputs
-        save_datasets(X_train, X_test, y_train, y_test, cfg)
-        save_preprocessor(preprocessor, cfg)
+        save_datasets(data, cfg)
 
         logger.success("Preprocessing completed successfully!")
 
