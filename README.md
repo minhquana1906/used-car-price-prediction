@@ -9,25 +9,25 @@ A machine learning project that predicts used car prices to help buyers make inf
 
 ## Table of Contents
 
-- Introduction
-- Project Structure
-- Features
-- Technology Stack
-- Installation and Setup
-  - Prerequisites
-  - Setting up the Development Environment
-  - Running the Application
-- Usage
-  - API Endpoints
-  - Streamlit UI
-- Model Development
-  - Dataset
-  - Model Training
-  - Model Performance
-- Docker Deployment
-- Contributing
-- License
-- Acknowledgements
+- [Introduction](#introduction)
+- [Project Structure](#project-structure)
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Installation and Setup](#installation-and-setup)
+  - [Prerequisites](#prerequisites)
+  - [Setting up the Development Environment](#setting-up-the-development-environment)
+  - [Running the Application](#running-the-application)
+- [Usage](#usage)
+  - [API Endpoints](#api-endpoints)
+  - [Streamlit UI](#streamlit-ui)
+- [Model Development](#model-development)
+  - [Dataset](#dataset)
+  - [Model Training](#model-training)
+  - [Model Performance](#model-performance)
+- [Docker Deployment](#docker-deployment)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 ## Introduction
 
