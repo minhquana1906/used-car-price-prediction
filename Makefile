@@ -30,6 +30,34 @@ clean-build: ## Clean build artifacts
 	@echo "🚀 Removing build artifacts"
 	@uv run python -c "import shutil; import os; shutil.rmtree('dist') if os.path.exists('dist') else None"
 
+.PHONY: pipeline
+pipeline: ## Run the pipeline
+	@echo "🚀 Running the pipeline"
+	@uv run used_car_price_prediction/pipeline/main.py
+
+.PHONY: run-api
+api: ## Run only the FastAPI backend
+	@echo "🚀 Running FastAPI backend service"
+	@uv run uvicorn app.main:app --reload
+
+.PHONY: run-ui
+ui: ## Run only the Streamlit frontend
+	@echo "🚀 Cleaning dataset to display in Data Analysis section in UI"
+	@uv run scripts/clean_dataset.py
+	@echo "🚀 Running Streamlit frontend service"
+	@uv run streamlit run used_car_price_prediction/ui/main.py
+
+.PHONY: application
+application: ## Run the application
+	@echo "🚀 Cleaning dataset to display in Data Analysis section in UI"
+	@uv run scripts/clean_dataset.py
+	@echo "🚀 Trigger preprocessing data pipeline"
+	@uv run used_car_price_prediction/pipeline/main.py
+	@echo "🚀 Running FastAPI backend service"
+	@uv run app/main.py &
+	@echo "🚀 Running the Streamlit frontend service"
+	@uv run streamlit run used_car_price_prediction/ui/main.py
+
 .PHONY: help
 help:
 	@uv run python -c "import re; \

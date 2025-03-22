@@ -21,6 +21,7 @@ paths:
 
   # File paths
   dataset_file_path: ${paths.dataset_path}/autos.csv
+  cleaned_data_file_path: "${paths.dataset_path}/autos_cleaned.csv"
   train_file_path: "${paths.processed_data_path}/train.csv"
   test_file_path: "${paths.processed_data_path}/test.csv"
   model_file_path: "${paths.models_path}/${model.name}.pkl"

@@ -12,6 +12,19 @@ columns_to_drop:
   - lastSeen
   - nrOfPictures
 
+columns_cleanup:
+  - index
+  - name
+  - seller
+  - offerType
+  - abtest
+  - dateCrawled
+  - monthOfRegistration
+  - postalCode
+  - dateCreated
+  - lastSeen
+  - nrOfPictures
+
 target: price
 test_size: 0.2
 random_state: 15
@@ -29,8 +42,6 @@ numerical_features:
   - powerPS
   - kilometer
   - age
-  # - gearbox
-  # - notRepairedDamage
 numerical_features_quantile:
   - kilometer
 numerical_features_boxcox:

@@ -3,6 +3,7 @@ logs/*
 models/*
 outputs/*
 data/*
+datasets/autos_cleaned.csv
 
 
 
