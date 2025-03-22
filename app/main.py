@@ -176,16 +176,18 @@ def predict(car: CarModel):
             upper_bound = prediction_value + error_margin
 
             # Format for response
-            formatted_prediction = f"{prediction_value:.2f}"
-            formatted_lower = f"{lower_bound:.2f}"
-            formatted_upper = f"{upper_bound:.2f}"
+            rounded_prediction = round(prediction_value, 2)
+            rounded_error = round(error_margin, 2)
+            rounded_lower = round(lower_bound, 2)
+            rounded_upper = round(upper_bound, 2)
 
             return JSONResponse(
                 status_code=200,
                 content={
-                    "predicted price": float(formatted_prediction),
-                    "error in price": f"{formatted_prediction} ± {error_margin:.2f}",
-                    "acceptable range": f"{formatted_lower} - {formatted_upper}",
+                    "predicted price": float(rounded_prediction),
+                    "error margin": rounded_error,
+                    "error in price": f"{rounded_prediction} ± {rounded_error}",
+                    "acceptable range": f"{rounded_lower} - {rounded_upper}",
                 },
             )
         except Exception as e:
