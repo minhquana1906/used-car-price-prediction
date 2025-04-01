@@ -12,6 +12,7 @@ API_URL = "http://localhost:8000"
 PREDICT_ENDPOINT = "http://localhost:8000/predict"
 DATA_PATH = "./datasets/autos_cleaned.csv"
 
+from used_car_price_prediction.ui.auth import login_page, logout, register_page
 
 # Page configuration
 st.set_page_config(
@@ -41,13 +42,34 @@ def load_data():
 #  Init session state
 if "prediction_result" not in st.session_state:
     st.session_state.prediction_result = None
-# if "current_page" not in st.session_state:
-#     st.session_state.current_page = "predict"
 if "pages" not in st.session_state:
     st.session_state.pages = "Home"
+if "is_authenticated" not in st.session_state:
+    st.session_state.is_authenticated = False
+if "username" not in st.session_state:
+    st.session_state.username = None
+if "token" not in st.session_state:
+    st.session_state.token = None
 
 # Get current page from session state
 pages = st.session_state.pages
+
+# Authentication sidebar section
+st.sidebar.title("Authentication")
+if not st.session_state.is_authenticated:
+    auth_option = st.sidebar.radio("", options=["Login", "Register"])
+
+    if auth_option == "Login":
+        if login_page():
+            st.rerun()
+    else:
+        if register_page():
+            st.sidebar.info("Please log in with your new account")
+else:
+    st.sidebar.success(f"Logged in as {st.session_state.username}")
+    if st.sidebar.button("Logout"):
+        logout()
+        st.rerun()
 
 # Page Navigation
 st.sidebar.title("Page Navigation")
