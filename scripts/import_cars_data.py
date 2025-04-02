@@ -8,7 +8,7 @@ from loguru import logger
 from omegaconf import DictConfig
 from sqlalchemy import text
 
-from database.dbmaker import Base, Car, SessionLocal, engine, init_db
+from scripts.dbmaker import Base, Car, SessionLocal, engine, init_db
 
 load_dotenv()
 
