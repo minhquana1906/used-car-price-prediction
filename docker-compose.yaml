@@ -1,108 +1,103 @@
 services:
-  minio:
-    image: minio/minio
+  redis:
+    image: redis:latest
     restart: always
-    env_file:
-      - .env
-    container_name: minio
-    expose:
-      - 9000
+    container_name: redis
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-    healthcheck:
-      test: timeout 5s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1
-      interval: 1s
-      timeout: 10s
-      retries: 5
-    command: server /data --console-address ":9001"
-    networks:
-      - car_price_network
+      - "6379:6379"
+    expose:
+      - 6379
     volumes:
-      - minio_data:/data
-
-  minio_create_bucket:
-    image: minio/mc
-    restart: on-failure
-    container_name: create_bucket
-    env_file:
-      - .env
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      bash -c "
-      mc alias set minio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
-      if ! mc ls minio/${MINIO_BUCKET}; then
-        mc mb minio/${MINIO_BUCKET}
-      else
-        echo '${MINIO_BUCKET} already exists'
-      fi
-      "
+      - redis_data:/data
     networks:
       - car_price_network
+    command: redis-server --save 60 1 --loglevel warning
 
   mysql:
     image: mysql:latest
     restart: always
     container_name: mysql
-    env_file:
-      - .env
     ports:
       - "3306:3306"
     environment:
+      - MYSQL_DATABASE=${APP_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     networks:
       - car_price_network
     volumes:
       - mysql_data:/var/lib/mysql
-    command: >
-      bash -c "
-      docker-entrypoint.sh mysqld &
-      sleep 10 &&
-      mysql -uroot -p$$MYSQL_ROOT_PASSWORD -e 'CREATE DATABASE IF NOT EXISTS ${MLFLOW_DATABASE};' &&
-      mysql -uroot -p$$MYSQL_ROOT_PASSWORD -e 'CREATE DATABASE IF NOT EXISTS ${APP_DATABASE};' &&
-      wait"
 
-  mlflow:
-    build:
-      context: .
-      dockerfile: Dockerfile.mlflow
-    restart: always
-    container_name: mlflow
-    env_file:
-      - .env
-    ports:
-      - "5000:5000"
-    depends_on:
-      - minio
-      - mysql
-    environment:
-      - MLFLOW_S3_ENDPOINT_URL=http://minio/9000
-      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
-      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
-    command:
-      mlflow server --backend-store-uri ${MLFLOW_DATABASE_URL} --default-artifact-root s3://mlflow --host 0.0.0.0 --port 5000
-    networks:
-      - car_price_network
 
-  # redis:
-  #   image: redis:latest
+  # minio:
+  #   image: minio/minio
   #   restart: always
-  #   container_name: redis
-  #   ports:
-  #     - "6379:6379"
+  #   env_file:
+  #     - .env
+  #   container_name: minio
   #   expose:
-  #     - 6379
-  #   volumes:
-  #     - redis_data:/data
+  #     - 9000
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+  #   environment:
+  #     - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+  #     - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+  #   healthcheck:
+  #     test: timeout 5s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1
+  #     interval: 1s
+  #     timeout: 10s
+  #     retries: 5
+  #   command: server /data --console-address ":9001"
   #   networks:
   #     - car_price_network
-  #   command: redis-server --save 60 1 --loglevel warning
+  #   volumes:
+  #     - minio_data:/data
 
+  # minio_create_bucket:
+  #   image: minio/mc
+  #   restart: on-failure
+  #   container_name: create_bucket
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     minio:
+  #       condition: service_healthy
+  #   entrypoint: >
+  #     bash -c "
+  #     mc alias set minio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+  #     if ! mc ls minio/${MINIO_BUCKET}; then
+  #       mc mb minio/${MINIO_BUCKET}
+  #     else
+  #       echo '${MINIO_BUCKET} already exists'
+  #     fi
+  #     "
+  #   networks:
+  #     - car_price_network
+
+
+  # mlflow:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.mlflow
+  #   restart: always
+  #   container_name: mlflow
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "5000:5000"
+  #   depends_on:
+  #     - minio
+  #     - mysql
+  #   environment:
+  #     - MLFLOW_S3_ENDPOINT_URL=http://minio/9000
+  #     - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+  #     - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+  #   command:
+  #     mlflow server --backend-store-uri ${MLFLOW_DATABASE_URL} --default-artifact-root s3://mlflow --host 0.0.0.0 --port 5000
+  #   networks:
+  #     - car_price_network
 
   # api:
   #   build:
@@ -150,7 +145,7 @@ services:
 
 
 volumes:
-  minio_data:
+  # minio_data:
   mysql_data:
   redis_data:
 

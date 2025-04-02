@@ -2563,20 +2563,31 @@ name = "used-car-price-prediction"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
+    { name = "fastapi", extra = ["standard"] },
     { name = "hydra-core" },
     { name = "joblib" },
     { name = "loguru" },
+    { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "plotly" },
+    { name = "pymysql" },
     { name = "scikit-learn" },
+    { name = "slowapi" },
+    { name = "streamlit" },
     { name = "xgboost" },
 ]
 
 [package.dev-dependencies]
 api = [
     { name = "fastapi", extra = ["standard"] },
+    { name = "joblib" },
+    { name = "loguru" },
+    { name = "numpy" },
     { name = "pandas" },
+    { name = "scikit-learn" },
     { name = "slowapi" },
+    { name = "xgboost" },
 ]
 dev = [
     { name = "bcrypt" },
@@ -2603,25 +2614,37 @@ ui = [
     { name = "matplotlib" },
     { name = "pandas" },
     { name = "plotly" },
+    { name = "requests" },
     { name = "streamlit" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.115.11" },
     { name = "hydra-core", specifier = ">=1.3.2" },
     { name = "joblib", specifier = ">=1.4.2" },
     { name = "loguru", specifier = ">=0.7.3" },
+    { name = "matplotlib", specifier = ">=3.9.4" },
     { name = "numpy", specifier = "==1.26.4" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "plotly", specifier = ">=6.0.1" },
+    { name = "pymysql", specifier = ">=1.1.1" },
     { name = "scikit-learn", specifier = "==1.3.2" },
+    { name = "slowapi", specifier = ">=0.1.9" },
+    { name = "streamlit", specifier = ">=1.43.2" },
     { name = "xgboost", specifier = "==2.0.3" },
 ]
 
 [package.metadata.requires-dev]
 api = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.11" },
+    { name = "joblib", specifier = ">=1.4.2" },
+    { name = "loguru", specifier = ">=0.7.3" },
+    { name = "numpy", specifier = "==1.26.4" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "scikit-learn", specifier = "==1.3.2" },
     { name = "slowapi", specifier = ">=0.1.9" },
+    { name = "xgboost", specifier = "==2.0.3" },
 ]
 dev = [
     { name = "bcrypt", specifier = ">=4.3.0" },
@@ -2648,6 +2671,7 @@ ui = [
     { name = "matplotlib", specifier = ">=3.9.4" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "plotly", specifier = ">=6.0.1" },
+    { name = "requests", specifier = ">=2.31.0" },
     { name = "streamlit", specifier = ">=1.43.2" },
 ]
 

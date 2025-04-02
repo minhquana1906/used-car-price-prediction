@@ -1,3 +1,4 @@
+import os
 import random
 import string
 import uuid
@@ -7,18 +8,14 @@ import bcrypt
 from dotenv import load_dotenv
 from loguru import logger
 from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
-                        Numeric, String, Text, UniqueConstraint, create_engine)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+                        Numeric, String, Text, create_engine)
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy.sql import func
 
 load_dotenv()
 
-# DATABASE_URL = os.getenv(
-#     "APP_DATABASE_URL", "mysql+pymysql://root:admin123@localhost:3306/app_db"
-# )
+DATABASE_URL = "mysql+pymysql://root:rootadmin123@localhost:3306/used_car_price"
 
-DATABASE_URL = "mysql+pymysql://root:admin123@localhost:3306/app_db"
 
 # SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
@@ -34,7 +31,6 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     subscription_tier = Column(String(20), nullable=False, default="Free")
-    api_key = Column(String(64), unique=True, nullable=True)
     created_at = Column(DateTime, default=func.now())
 
     # Relationships
@@ -204,7 +200,7 @@ def create_users(count=50):
             email = f"{username}@example.com"
 
             # Generate API key (for some users)
-            api_key = str(uuid.uuid4()) if random.random() < 0.8 else None
+            # api_key = str(uuid.uuid4()) if random.random() < 0.8 else None
 
             # Create user
             user = User(
@@ -212,7 +208,7 @@ def create_users(count=50):
                 password_hash=generate_hash_password(f"password{i}"),
                 email=email,
                 subscription_tier=tier,
-                api_key=api_key,
+                # api_key=api_key,
                 created_at=datetime.now() - timedelta(days=random.randint(1, 365)),
             )
 
@@ -237,4 +233,4 @@ def create_users(count=50):
 if __name__ == "__main__":
     init_db()
     create_subscription_plans()
-    create_users(10)
+    # create_users(10)
