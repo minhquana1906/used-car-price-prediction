@@ -1,4 +1,0 @@
-
-pandas>=2.2.3
-fastapi[standard]>=0.115.11
-slowapi>=0.1.9
