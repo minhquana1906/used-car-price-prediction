@@ -13,7 +13,7 @@ from database.dbmaker import Base, Car, SessionLocal, engine, init_db
 load_dotenv()
 
 
-def convert_car_df(df):
+def convert_car_df_all(df):
     column_mapping = {
         "brand": "brand",
         "model": "model",
@@ -32,11 +32,94 @@ def convert_car_df(df):
     return df_renamed
 
 
+# def convert_car_df(df):
+#     column_mapping = {
+#         "brand": "brand",
+#         "model": "model",
+#         "vehicleType": "vehicle_type",
+#         "fuelType": "fuel_type",
+#         "powerPS": "power_ps",
+#         "kilometer": "kilometer",
+#         "yearOfRegistration": "year_of_registration",
+#         "gearbox": "gearbox",
+#         "notRepairedDamage": "not_repaired_damage",
+#         "price": "price",
+#     }
+
+#     # Apply stratified sampling to ensure diversity in the data
+#     # First, create a combined feature for stratification based on important categorical features
+#     logger.info(f"Original dataset size: {len(df)}")
+
+#     # Create a stratification feature using brand and vehicle type
+#     df["strat"] = df["brand"] + "_" + df["vehicleType"]
+
+#     # Ensure we don't have too many strata with very few samples
+#     strat_counts = df["strat"].value_counts()
+#     min_samples = 5  # Minimum samples per stratum
+#     valid_strata = strat_counts[strat_counts >= min_samples].index
+
+#     # Filter to only include valid strata
+#     df_valid = df[df["strat"].isin(valid_strata)]
+#     logger.info(f"Valid data for stratified sampling: {len(df_valid)} rows")
+
+#     n = 10000
+#     # If we have less than 5000 valid samples, take all of them
+#     if len(df_valid) <= n:
+#         sample_df = df_valid
+#         logger.info(f"Using all available {len(sample_df)} valid samples")
+#     else:
+#         # Calculate fraction to sample (minimum 1 from each stratum)
+#         frac = min(1.0, n / len(df_valid))
+
+#         try:
+#             # Try stratified sampling
+#             sample_df = df_valid.groupby("strat", group_keys=False).apply(
+#                 lambda x: x.sample(frac=frac, random_state=42)
+#             )
+
+#             # If we have too many samples, take exactly n
+#             if len(sample_df) > n:
+#                 sample_df = sample_df.sample(n=n, random_state=42)
+
+#             logger.info(f"Selected {len(sample_df)} samples using stratified sampling")
+
+#         except Exception as e:
+#             # Fallback to simple random sampling if stratified sampling fails
+#             logger.warning(
+#                 f"Stratified sampling failed: {e}. Using random sampling instead."
+#             )
+#             sample_df = df.sample(n=min(n, len(df)), random_state=42)
+#             logger.info(f"Selected {len(sample_df)} samples using random sampling")
+
+#     # Drop the stratification column
+#     sample_df = sample_df.drop("strat", axis=1)
+
+#     # Rename columns according to the mapping
+#     df_renamed = sample_df.rename(columns=column_mapping)
+
+#     # Log the distribution of key features
+#     logger.info(
+#         f"Distribution of brands: {df_renamed['brand'].value_counts().head(10)}"
+#     )
+#     logger.info(
+#         f"Distribution of vehicle types: {df_renamed['vehicle_type'].value_counts()}"
+#     )
+#     logger.info(f"Distribution of fuel types: {df_renamed['fuel_type'].value_counts()}")
+#     logger.info(
+#         f"Distribution of gearbox types: {df_renamed['gearbox'].value_counts()}"
+#     )
+#     logger.info(
+#         f"Distribution of damage status: {df_renamed['not_repaired_damage'].value_counts()}"
+#     )
+
+#     return df_renamed
+
+
 def import_data_to_db(cfg):
     try:
         cleaned_data_path = cfg.paths.cleaned_data_file_path
         db_data = pd.read_csv(cleaned_data_path)
-        db_data = convert_car_df(db_data)
+        db_data = convert_car_df_all(db_data)
 
         required_columns = [
             "brand",
@@ -117,9 +200,7 @@ def import_data_to_db(cfg):
 
 @hydra.main(config_path="../conf", config_name="config", version_base=None)
 def main(cfg: DictConfig):
-    # Ensure the database and tables exist
     init_db()
-    # Import the data
     import_data_to_db(cfg)
 
 

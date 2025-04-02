@@ -31,6 +31,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     subscription_tier = Column(String(20), nullable=False, default="Free")
+    api_key = Column(String(64), unique=True, nullable=True)
     created_at = Column(DateTime, default=func.now())
 
     # Relationships
