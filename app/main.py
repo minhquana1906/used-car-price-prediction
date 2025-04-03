@@ -1,18 +1,16 @@
 import os
-from datetime import datetime
+from contextlib import asynccontextmanager
 
 import pandas as pd
-import redis
+import redis.asyncio as redis
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from joblib import load
 from loguru import logger
-from pydantic import BaseModel, Field
 
-from utils.decorators import timer
-
-logger.add("logs/api.log", rotation="500 MB", level="INFO")
+from utils.api_helper import (CarModel, get_redis_cache_async, preprocess_data,
+                              run_in_threadpool, set_redis_cache_async)
 
 model_pipeline = None
 redis_client = None
@@ -21,37 +19,20 @@ error_margin = None
 FULL_PIPELINE_PATH = "./models/full_pipeline.pkl"
 METRICS_PATH = "./logs/metrics/model_metrics.csv"
 DEFAULT_ERROR_MARGIN = 500
-DEFAULT_EXPIRATION_TIME = 60  # 1 day in seconds
-
-app = FastAPI(
-    title="Used Car Price Prediction API",
-    description="API to help users making decision to buy a used car.",
-    version="0.1",
-)
+DEFAULT_EXPIRATION_TIME = 60 * 60
 
 
-class CarModel(BaseModel):
-    vehicleType: str = "coupe"
-    gearbox: str = "automatic"
-    powerPS: float = Field(190.0, gt=0)
-    model: str = "a5"
-    kilometer: float = Field(125000, gt=0)
-    fuelType: str = "diesel"
-    brand: str = "audi"
-    notRepairedDamage: str = "no"
-    yearOfRegistration: int = Field(2010, ge=1885, le=datetime.now().year)
+logger.add("logs/api.log", rotation="500 MB", level="INFO")
 
 
-@app.on_event("startup")
-@timer
-def load_model():
-    """Load model pipeline and metrics at startup to avoid reloading for each request."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     global model_pipeline, redis_client, error_margin
 
     # Load pipeline
     if os.path.exists(FULL_PIPELINE_PATH):
         logger.info(f"Loading full pipeline from {FULL_PIPELINE_PATH}")
-        model_pipeline = load(FULL_PIPELINE_PATH)
+        model_pipeline = await run_in_threadpool(load, FULL_PIPELINE_PATH)
         logger.success("Model pipeline loaded successfully")
     else:
         logger.error(f"Pipeline file not found at {FULL_PIPELINE_PATH}")
@@ -59,7 +40,7 @@ def load_model():
 
     # Load metrics
     if os.path.exists(METRICS_PATH):
-        metrics_df = pd.read_csv(METRICS_PATH)
+        metrics_df = await run_in_threadpool(pd.read_csv, METRICS_PATH)
         error_margin = (
             float(metrics_df["MAE"].iloc[0])
             if "MAE" in metrics_df.columns
@@ -72,32 +53,27 @@ def load_model():
 
     # Connect to Redis
     try:
-        redis_client = redis.Redis(
-            host="localhost", port=6379, db=0, decode_responses=True
-        )
-        redis_client.ping()
+        redis_client = redis.from_url("redis://localhost:6379", decode_responses=True)
+        await redis_client.ping()
         logger.success("Connected to Redis successfully!")
-    except redis.ConnectionError:
-        logger.error("Failed to connect to Redis.")
+    except Exception as e:
+        logger.error(f"Redis connection error: {e}")
         redis_client = None
 
+    # endpoint to start each time the server reloads
+    yield
 
-@timer
-def preprocess_data(data: dict) -> pd.DataFrame:
-    """Preprocess input data for prediction."""
-    logger.info(f"Preprocessing input data: {data}")
+    logger.info("Shutting down API...")
+    if redis_client:
+        await redis_client.close()
 
-    # Chuyển đổi categorical thành số
-    data["notRepairedDamage"] = 1 if data["notRepairedDamage"].lower() == "yes" else 0
-    data["gearbox"] = 1 if data["gearbox"].lower() == "automatic" else 0
 
-    data["age"] = datetime.now().year - data["yearOfRegistration"]
-    data.pop("yearOfRegistration")
-
-    df = pd.DataFrame([data])
-
-    logger.success("Data preprocessed successfully")
-    return df
+app = FastAPI(
+    title="Used Car Price Prediction API",
+    description="API to help users making decision to buy a used car.",
+    version="0.1",
+    lifespan=lifespan,
+)
 
 
 @app.get("/")
@@ -129,23 +105,20 @@ async def predict(car: CarModel):
 
         cache_key = f"car_prediction:{hash(frozenset(data.items()))}"
         if redis_client:
-            cached_result = redis_client.get(cache_key)
+            cached_result = await get_redis_cache_async(redis_client, cache_key)
             if cached_result:
                 logger.info("Cache hit! Returning cached result.")
                 return JSONResponse(
                     status_code=200,
-                    # content={
-                    #     "predicted price": round(float(cached_result), 2),
-                    #     "error margin": round(error_margin, 2),
-                    #     "acceptable range": f"{round(float(cached_result) - error_margin, 2)} - {round(float(cached_result) + error_margin, 2)}",
-                    # },
                     content=eval(cached_result),
                 )
 
         processed_data = preprocess_data(data)
 
         # Make prediction
-        prediction = model_pipeline.predict(processed_data)
+        prediction = await run_in_threadpool(
+            lambda: model_pipeline.predict(processed_data)
+        )
         prediction_value = float(prediction[0])
         logger.info(f"Raw prediction: {prediction_value}")
 
@@ -160,13 +133,53 @@ async def predict(car: CarModel):
         }
 
         if redis_client:
-            redis_client.set(cache_key, str(result), DEFAULT_EXPIRATION_TIME)
+            await set_redis_cache_async(
+                redis_client, cache_key, str(result), DEFAULT_EXPIRATION_TIME
+            )
             logger.info(f"Cached result: {result}")
 
         return JSONResponse(status_code=200, content=result)
     except Exception as e:
         logger.error(f"Prediction error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.get("/cached-predictions")
+async def get_cached_predictions():
+    """Return all currently cached predictions."""
+    if redis_client is None:
+        return {"status": "Redis not available"}
+
+    try:
+        keys = await redis_client.keys("car_prediction:*")
+        result = {}
+        for key in keys:
+            ttl = await redis_client.ttl(key)
+            value = await redis_client.get(key)
+            result[key] = {"value": eval(value), "ttl_seconds": ttl}
+        return result
+    except Exception as e:
+        logger.error(f"Cache retrieval error: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+
+@app.delete("/cached-predictions")
+async def delete_cached_predictions():
+    """Delete all cached predictions."""
+    if redis_client is None:
+        return {"status": "Redis not available"}
+
+    try:
+        keys = await redis_client.keys("car_prediction:*")
+        if keys:
+            await redis_client.delete(*keys)
+            logger.info("Deleted all cached predictions")
+            return {"status": "success", "message": "All cached predictions deleted"}
+        else:
+            return {"status": "success", "message": "No cached predictions found"}
+    except Exception as e:
+        logger.error(f"Cache deletion error: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 
 if __name__ == "__main__":
