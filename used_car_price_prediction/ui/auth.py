@@ -1,16 +1,12 @@
-import json
 from datetime import datetime
 
 import requests
 import streamlit as st
 
-# API endpoint
 API_URL = "http://localhost:8000"
 
-
-def login_page():
+def login_page(cookies):
     st.title("🔐 Login")
-
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -21,16 +17,16 @@ def login_page():
                 st.error("Please enter both username and password")
                 return False
 
-            # Make API call to FastAPI login endpoint
             try:
                 response = requests.post(
                     f"{API_URL}/login",
                     data={"username": username, "password": password},
                 )
-
                 if response.status_code == 200:
                     token_data = response.json()
-                    # Store auth token in session state
+                    cookies["token"] = token_data["access_token"]
+                    cookies["username"] = username
+                    cookies.save()
                     st.session_state.token = token_data["access_token"]
                     st.session_state.username = username
                     st.session_state.is_authenticated = True
@@ -42,35 +38,28 @@ def login_page():
             except Exception as e:
                 st.error(f"Login failed: {str(e)}")
                 return False
-
     return False
 
-
-def register_page():
+def register_page(cookies):
     st.title("📝 Register")
-
     with st.form("registration_form"):
         username = st.text_input("Username")
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
         confirm_password = st.text_input("Confirm Password", type="password")
-
         subscription_tier = st.selectbox(
             "Subscription Tier", options=["Free", "Basic", "Premium"], index=0
         )
-
         submitted = st.form_submit_button("Register")
 
         if submitted:
             if not username or not email or not password:
                 st.error("Please fill in all required fields")
                 return False
-
             if password != confirm_password:
                 st.error("Passwords do not match")
                 return False
 
-            # Make API call to FastAPI registration endpoint
             try:
                 response = requests.post(
                     f"{API_URL}/register",
@@ -81,7 +70,6 @@ def register_page():
                         "subscription_tier": subscription_tier,
                     },
                 )
-
                 if response.status_code == 201:
                     st.success("Registration successful! Please login.")
                     return True
@@ -92,14 +80,15 @@ def register_page():
             except Exception as e:
                 st.error(f"Registration failed: {str(e)}")
                 return False
-
     return False
 
-
-def logout():
-    if "token" in st.session_state:
-        del st.session_state.token
-    if "username" in st.session_state:
-        del st.session_state.username
+def logout(cookies):
+    if "token" in cookies:
+        del cookies["token"]
+    if "username" in cookies:
+        del cookies["username"]
+    cookies.save()
     st.session_state.is_authenticated = False
+    st.session_state.token = None
+    st.session_state.username = None
     st.success("Logged out successfully!")

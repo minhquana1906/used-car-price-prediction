@@ -16,15 +16,23 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+from streamlit_cookies_manager import EncryptedCookieManager
+
 from used_car_price_prediction.ui.auth import login_page, logout, register_page
 
 API_URL = "http://localhost:8000"
 PREDICT_ENDPOINT = "http://localhost:8000/predict"
 DATA_PATH = "./datasets/autos_cleaned.csv"
 
+# Khởi tạo cookie manager
+cookies = EncryptedCookieManager(
+    password="your-very-secure-password-here",  # Phải khớp với password trong auth.py
+)
+if not cookies.ready():
+    st.stop()
+
 # cache data loading
 @st.cache_data()
-
 def load_data():
     """Load and preprocess the dataset and visualization"""
     try:
@@ -38,18 +46,36 @@ def load_data():
         st.error(f"An error occurred: {str(e)}")
         return pd.DataFrame()
 
+# Khôi phục trạng thái từ cookie
+def restore_session():
+    if "token" in cookies and "username" in cookies:
+        st.session_state.token = cookies["token"]
+        st.session_state.username = cookies["username"]
+        st.session_state.is_authenticated = True
+    else:
+        st.session_state.is_authenticated = False
+        st.session_state.token = None
+        st.session_state.username = None
 
-#  Init session state
+# #  Init session state
+# if "prediction_result" not in st.session_state:
+#     st.session_state.prediction_result = None
+# if "pages" not in st.session_state:
+#     st.session_state.pages = "Home"
+# if "is_authenticated" not in st.session_state:
+#     st.session_state.is_authenticated = False
+# if "username" not in st.session_state:
+#     st.session_state.username = None
+# if "token" not in st.session_state:
+#     st.session_state.token = None
+
+# Init session state
 if "prediction_result" not in st.session_state:
     st.session_state.prediction_result = None
 if "pages" not in st.session_state:
     st.session_state.pages = "Home"
 if "is_authenticated" not in st.session_state:
-    st.session_state.is_authenticated = False
-if "username" not in st.session_state:
-    st.session_state.username = None
-if "token" not in st.session_state:
-    st.session_state.token = None
+    restore_session()  # Khôi phục trạng thái từ cookie
 
 # Get current page from session state
 pages = st.session_state.pages
@@ -62,15 +88,15 @@ if not st.session_state.is_authenticated:
     auth_option = st.sidebar.radio("", options=["Login", "Register"])
 
     if auth_option == "Login":
-        if login_page():
+        if login_page(cookies):
             st.rerun()  # Refresh lại trang sau khi đăng nhập
     else:
-        if register_page():
+        if register_page(cookies):
             st.sidebar.info("Please log in with your new account")
 else:
     st.sidebar.success(f"Logged in as {st.session_state.username}")
     if st.sidebar.button("Logout"):
-        logout()  # Gửi request để xóa JWT cookie
+        logout(cookies)  # Gửi request để xóa JWT cookie
         st.rerun()
 
 if st.session_state.is_authenticated:
