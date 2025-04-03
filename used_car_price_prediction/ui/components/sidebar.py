@@ -24,19 +24,19 @@ def render_sidebar():
             logout()
             st.rerun()
 
-    # Navigation section
-    st.sidebar.title("Page Navigation")
+        # Navigation section
+        st.sidebar.title("Page Navigation")
 
-    # Use session_state for persistent navigation
-    if st.sidebar.button("🏠 Home", use_container_width=True):
-        st.session_state.pages = "Home"
-        st.rerun()
-    if st.sidebar.button("🔮 Prediction", use_container_width=True):
-        st.session_state.pages = "Prediction"
-        st.rerun()
-    if st.sidebar.button("📊 Data Analysis", use_container_width=True):
-        st.session_state.pages = "Data Analysis"
-        st.rerun()
-    if st.sidebar.button("ℹ️ About", use_container_width=True):
-        st.session_state.pages = "About"
-        st.rerun()
+        # Use session_state for persistent navigation
+        if st.sidebar.button("🏠 Home", use_container_width=True):
+            st.session_state.pages = "Home"
+            st.rerun()
+        if st.sidebar.button("🔮 Prediction", use_container_width=True):
+            st.session_state.pages = "Prediction"
+            st.rerun()
+        if st.sidebar.button("📊 Data Analysis", use_container_width=True):
+            st.session_state.pages = "Data Analysis"
+            st.rerun()
+        if st.sidebar.button("ℹ️ About", use_container_width=True):
+            st.session_state.pages = "About"
+            st.rerun()

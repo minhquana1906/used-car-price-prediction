@@ -24,13 +24,12 @@ def login_page():
             # Make API call to FastAPI login endpoint
             try:
                 response = requests.post(
-                    f"{API_URL}/login",
+                    f"{API_URL}/auth/login",
                     data={"username": username, "password": password},
                 )
 
                 if response.status_code == 200:
                     token_data = response.json()
-                    # Store auth token in session state
                     st.session_state.token = token_data["access_token"]
                     st.session_state.username = username
                     st.session_state.is_authenticated = True
@@ -73,7 +72,7 @@ def register_page():
             # Make API call to FastAPI registration endpoint
             try:
                 response = requests.post(
-                    f"{API_URL}/register",
+                    f"{API_URL}/auth/register",
                     json={
                         "username": username,
                         "email": email,

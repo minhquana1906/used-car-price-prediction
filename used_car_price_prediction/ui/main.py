@@ -38,20 +38,21 @@ def main():
 
     render_sidebar()
 
-    data = load_data_from_db()
-    if data is not None:
-        data["age"] = datetime.now().year - data["yearOfRegistration"]
+    if st.session_state.is_authenticated:
+        data = load_data_from_db()
+        if data is not None:
+            data["age"] = datetime.now().year - data["yearOfRegistration"]
 
-    current_page = st.session_state.pages
+        current_page = st.session_state.pages
 
-    if current_page == "Home":
-        render_home_page(data)
-    elif current_page == "Prediction":
-        render_prediction_page(data)
-    elif current_page == "Data Analysis":
-        render_analysis_page(data)
-    elif current_page == "About":
-        render_about_page()
+        if current_page == "Home":
+            render_home_page(data)
+        elif current_page == "Prediction":
+            render_prediction_page(data)
+        elif current_page == "Data Analysis":
+            render_analysis_page(data)
+        elif current_page == "About":
+            render_about_page()
 
     render_footer()
 
