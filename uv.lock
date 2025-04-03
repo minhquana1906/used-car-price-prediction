@@ -2647,7 +2647,7 @@ api = [
     { name = "xgboost", specifier = "==2.0.3" },
 ]
 dev = [
-    { name = "bcrypt", specifier = ">=4.3.0" },
+{ name = "bcrypt", specifier = ">=4.3.0" },
     { name = "category-encoders", specifier = ">=2.6.4" },
     { name = "deptry", specifier = ">=0.22.0" },
     { name = "ipykernel", specifier = ">=6.29.5" },
