@@ -8,6 +8,9 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from joblib import load
 from loguru import logger
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.auth.jwt import get_current_user
 from app.auth.router import router as auth_router
@@ -105,7 +108,6 @@ async def predict(car: CarModel, current_user: User = Depends(get_current_user))
         raise HTTPException(status_code=500, detail="Model not loaded")
 
     try:
-        # Preprocess input data
         data = car.model_dump()
 
         cache_key = f"car_prediction:{hash(frozenset(data.items()))}"
@@ -120,14 +122,12 @@ async def predict(car: CarModel, current_user: User = Depends(get_current_user))
 
         processed_data = preprocess_data(data)
 
-        # Make prediction
         prediction = await run_in_threadpool(
             lambda: model_pipeline.predict(processed_data)
         )
         prediction_value = float(prediction[0])
         logger.info(f"Raw prediction: {prediction_value}")
 
-        # Calculate range
         lower_bound = max(0, prediction_value - error_margin)
         upper_bound = prediction_value + error_margin
 

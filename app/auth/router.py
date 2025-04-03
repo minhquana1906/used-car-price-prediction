@@ -55,58 +55,12 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
 
 
 # Authentication route using OAuth2PasswordRequestForm
-# @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
-# def login_user(
-#     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
-# ):
-#     try:
-#         user = get_user_by_username(db, form_data.username)
-#         if not user:
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="Invalid username or password",
-#                 headers={"WWW-Authenticate": "Bearer"},
-#             )
-
-#         if not verify_password(form_data.password, user.password_hash):
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="Invalid username or password",
-#                 headers={"WWW-Authenticate": "Bearer"},
-#             )
-
-#         access_token = create_access_token(
-#             subject=user.username,
-#             user_id=user.id,
-#             subscription_tier=user.subscription_tier,
-#         )
-
-#         return {
-#             "access_token": access_token,
-#             "token_type": "bearer",
-#             "user": UserDB(
-#                 id=user.id,
-#                 username=user.username,
-#                 email=user.email,
-#                 subscription_tier=user.subscription_tier,
-#                 api_key=user.api_key,
-#                 created_at=user.created_at,
-#                 is_active=user.is_active,
-#             ),
-#         }
-#     except Exception as e:
-#         logger.error(f"Login error: {str(e)}")
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail=f"Login failed: {str(e)}",
-#         )
-
-
-# Simple login route using JSON body
 @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
-def login_user(user_in: UserLogin, db: Session = Depends(get_db)):
+def login_user(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
     try:
-        user = get_user_by_username(db, user_in.username)
+        user = get_user_by_username(db, form_data.username)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -114,7 +68,7 @@ def login_user(user_in: UserLogin, db: Session = Depends(get_db)):
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        if not verify_password(user_in.password, user.password_hash):
+        if not verify_password(form_data.password, user.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or password",
