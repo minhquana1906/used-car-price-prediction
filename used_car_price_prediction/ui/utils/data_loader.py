@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy import text
 
-from database.dbmaker import SessionLocal
+from scripts.dbmaker import SessionLocal
 
 DATA_PATH = "./datasets/autos_cleaned.csv"
 
