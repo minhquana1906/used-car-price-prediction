@@ -4,11 +4,14 @@ from contextlib import asynccontextmanager
 import pandas as pd
 import redis.asyncio as redis
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from joblib import load
 from loguru import logger
 
+from app.auth.jwt import get_current_user
+from app.auth.router import router as auth_router
+from scripts.dbmaker import User
 from utils.api_helper import (CarModel, get_redis_cache_async, preprocess_data,
                               run_in_threadpool, set_redis_cache_async)
 
@@ -75,6 +78,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(auth_router, prefix="/auth", tags=["authentication"])
+
 
 @app.get("/")
 def root():
@@ -92,7 +97,7 @@ def status():
 
 
 @app.post("/predict")
-async def predict(car: CarModel):
+async def predict(car: CarModel, current_user: User = Depends(get_current_user)):
     """Predict the price of a car based on its features and return with error margin."""
     global model_pipeline, error_margin
 
@@ -145,7 +150,7 @@ async def predict(car: CarModel):
 
 
 @app.get("/cached-predictions")
-async def get_cached_predictions():
+async def get_cached_predictions(current_user: User = Depends(get_current_user)):
     """Return all currently cached predictions."""
     if redis_client is None:
         return {"status": "Redis not available"}
@@ -164,7 +169,7 @@ async def get_cached_predictions():
 
 
 @app.delete("/cached-predictions")
-async def delete_cached_predictions():
+async def delete_cached_predictions(current_user: User = Depends(get_current_user)):
     """Delete all cached predictions."""
     if redis_client is None:
         return {"status": "Redis not available"}

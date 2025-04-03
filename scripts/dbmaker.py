@@ -33,6 +33,7 @@ class User(Base):
     subscription_tier = Column(String(20), nullable=False, default="Free")
     api_key = Column(String(64), unique=True, nullable=True)
     created_at = Column(DateTime, default=func.now())
+    is_active = Column(Boolean, default=True)
 
     # Relationships
     inference_requests = relationship("InferenceRequest", back_populates="user")
