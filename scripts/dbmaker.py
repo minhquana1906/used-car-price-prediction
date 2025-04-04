@@ -55,8 +55,6 @@ class Car(Base):
     not_repaired_damage = Column(String(10), nullable=False)
     price = Column(Numeric(12, 2), nullable=False)
 
-    inference_requests = relationship("InferenceRequest", back_populates="car")
-
 
 class SubscriptionPlan(Base):
     __tablename__ = "subscription_plans"
@@ -74,14 +72,12 @@ class InferenceRequest(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    car_id = Column(Integer, ForeignKey("cars.id"), nullable=False)
     request_time = Column(DateTime, default=func.now())
     predicted_price = Column(Numeric(12, 2), nullable=True)
     is_cached = Column(Boolean, default=False)
 
     # Relationships
     user = relationship("User", back_populates="inference_requests")
-    car = relationship("Car", back_populates="inference_requests")
 
 
 class ApiUsage(Base):
