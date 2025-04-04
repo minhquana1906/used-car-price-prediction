@@ -12,31 +12,23 @@ def render_sidebar(cookies):
         if "auth_view" not in st.session_state:
             st.session_state.auth_view = "login"
 
-        col1, col2 = st.sidebar.columns(2)
+        if st.sidebar.button(
+            "Login",
+            use_container_width=True,
+            type=("primary" if st.session_state.auth_view == "login" else "secondary"),
+        ):
+            st.session_state.auth_view = "login"
+            st.rerun()
 
-        with col1:
-            if st.button(
-                "Login",
-                use_container_width=True,
-                type=(
-                    "primary" if st.session_state.auth_view == "login" else "secondary"
-                ),
-            ):
-                st.session_state.auth_view = "login"
-                st.rerun()
-
-        with col2:
-            if st.button(
-                "Register",
-                use_container_width=True,
-                type=(
-                    "primary"
-                    if st.session_state.auth_view == "register"
-                    else "secondary"
-                ),
-            ):
-                st.session_state.auth_view = "register"
-                st.rerun()
+        if st.sidebar.button(
+            "Register",
+            use_container_width=True,
+            type=(
+                "primary" if st.session_state.auth_view == "register" else "secondary"
+            ),
+        ):
+            st.session_state.auth_view = "register"
+            st.rerun()
 
         if st.session_state.auth_view == "login":
             if login_page(cookies):

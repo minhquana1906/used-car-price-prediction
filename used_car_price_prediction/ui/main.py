@@ -26,6 +26,18 @@ if not cookies.ready():
     st.stop()
 
 
+if "session_id" not in st.session_state:
+    import uuid
+
+    st.session_state.session_id = str(uuid.uuid4())
+
+    if "username" not in cookies or "token" not in cookies:
+        if "username" in st.session_state:
+            st.session_state.username = None
+        if "token" in st.session_state:
+            st.session_state.token = None
+
+
 def restore_session():
     if "username" in cookies and "token" in cookies:
         st.session_state.username = cookies["username"]
