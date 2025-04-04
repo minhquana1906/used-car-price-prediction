@@ -1,6 +1,8 @@
+import os
 from datetime import datetime
 
 import streamlit as st
+from streamlit_cookies_manager import EncryptedCookieManager
 
 from used_car_price_prediction.ui.components.footer import render_footer
 from used_car_price_prediction.ui.components.sidebar import render_sidebar
@@ -19,6 +21,21 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+cookies = EncryptedCookieManager(password=os.getenv("COOKIE_PASSWORD"))
+if not cookies.ready():
+    st.stop()
+
+
+def restore_session():
+    if "username" in cookies and "token" in cookies:
+        st.session_state.username = cookies["username"]
+        st.session_state.token = cookies["token"]
+        st.session_state.is_authenticated = True
+    else:
+        st.session_state.is_authenticated = False
+        st.session_state.username = None
+        st.session_state.token = None
+
 
 def init_session_state():
     if "prediction_result" not in st.session_state:
@@ -26,17 +43,13 @@ def init_session_state():
     if "pages" not in st.session_state:
         st.session_state.pages = "Home"
     if "is_authenticated" not in st.session_state:
-        st.session_state.is_authenticated = False
-    if "username" not in st.session_state:
-        st.session_state.username = None
-    if "token" not in st.session_state:
-        st.session_state.token = None
+        restore_session()
 
 
 def main():
     init_session_state()
 
-    render_sidebar()
+    render_sidebar(cookies)
 
     if st.session_state.is_authenticated:
         data = load_data_from_db()
@@ -54,7 +67,7 @@ def main():
         elif current_page == "About":
             render_about_page()
 
-    render_footer()
+    # render_footer()
 
 
 if __name__ == "__main__":

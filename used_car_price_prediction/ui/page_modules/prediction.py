@@ -115,7 +115,6 @@ def render_prediction_page(data):
         st.success("🎉 Prediction Complete!")
         result = st.session_state.prediction_result
 
-        # display result and visualize in simple chart
         res_col1, res_col2 = st.columns(2)
 
         with res_col1:

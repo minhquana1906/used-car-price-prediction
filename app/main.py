@@ -8,9 +8,6 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from joblib import load
 from loguru import logger
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 from app.auth.jwt import get_current_user
 from app.auth.router import router as auth_router

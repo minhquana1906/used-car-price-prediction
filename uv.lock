@@ -2423,6 +2423,19 @@ wheels = [
 ]
 
 [[package]]
+name = "streamlit-cookies-manager"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "streamlit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a8/15/d016f1b2e1c547fecf7782dac3860d2aad4e22b4c1664d78bb2a873163ef/streamlit-cookies-manager-0.2.0.tar.gz", hash = "sha256:498531778bd4a63267364e8986b3774319d3ba2f4ba65a92357196723966e4d4", size = 680070 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/60/d4aefff016f9fe48d10c59b2e52ae823444525f973e7948821c9eefb4217/streamlit_cookies_manager-0.2.0-py3-none-any.whl", hash = "sha256:12503dc3367dfc2a780cb9e4a81ad791737806a7b9d1c25a006386e32aabe956", size = 690962 },
+]
+
+[[package]]
 name = "tenacity"
 version = "9.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2595,6 +2608,7 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "slowapi" },
     { name = "streamlit" },
+    { name = "streamlit-cookies-manager" },
     { name = "xgboost" },
 ]
 
@@ -2654,6 +2668,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = "==1.3.2" },
     { name = "slowapi", specifier = ">=0.1.9" },
     { name = "streamlit", specifier = ">=1.43.2" },
+    { name = "streamlit-cookies-manager", specifier = ">=0.2.0" },
     { name = "xgboost", specifier = "==2.0.3" },
 ]
 
