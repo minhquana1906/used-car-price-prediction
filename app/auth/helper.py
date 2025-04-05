@@ -60,14 +60,15 @@ def generate_password_reset_token(email: str) -> str:
     return create_access_token(
         subject=email,
         user_id=0,
-        subscription_tier="reset",
+        subscription_plan_id=1,
+        purpose="reset_password",
         expires_delta=timedelta(hours=1)
     )
 
 def verify_password_reset_token(token: str) -> str | None:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("subscription_tier") != "reset":
+        if payload.get("purpose") != "reset_password":
             return None
         return payload.get("sub")
     except JWTError:

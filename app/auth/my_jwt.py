@@ -2,7 +2,6 @@ import os
 from datetime import datetime, timedelta
 from typing import Any, Optional, Union
 
-import jwt as pyjwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -21,7 +20,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 def create_access_token(
     subject: Union[str, Any],
     user_id: int,
-    subscription_tier: str,
+    subscription_plan_id: int,
+    purpose: Optional[str] = None,
     expires_delta: Optional[timedelta] = None
 ) -> str:
     if expires_delta:
@@ -33,10 +33,13 @@ def create_access_token(
         "sub": str(subject),
         "exp": expire.timestamp(),
         "user_id": user_id,
-        "subscription_tier": subscription_tier,
+        "subscription_plan_id": subscription_plan_id,
     }
 
-    encoded_jwt = pyjwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    if purpose:
+        to_encode["purpose"] = purpose
+
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -68,12 +71,6 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Inactive user",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
