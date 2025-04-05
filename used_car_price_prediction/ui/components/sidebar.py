@@ -1,6 +1,9 @@
 import streamlit as st
 
-from used_car_price_prediction.ui.auth import login_page, logout, register_page
+from used_car_price_prediction.ui.auth import (forgot_password_page,
+                                               login_page, logout,
+                                               register_page,
+                                               reset_password_page)
 
 
 def render_sidebar(cookies):
@@ -12,7 +15,7 @@ def render_sidebar(cookies):
         if "auth_view" not in st.session_state:
             st.session_state.auth_view = "login"
 
-        col1, col2 = st.sidebar.columns(2)
+        col1, col2, col3 = st.sidebar.columns(3)
 
         with col1:
             if st.button(
@@ -30,26 +33,52 @@ def render_sidebar(cookies):
                 "Register",
                 use_container_width=True,
                 type=(
-                    "primary"
-                    if st.session_state.auth_view == "register"
-                    else "secondary"
+                    "primary" if st.session_state.auth_view == "register" else "secondary"
                 ),
             ):
                 st.session_state.auth_view = "register"
                 st.rerun()
 
+        with col3:
+            if st.button(
+                "Forgot",
+                use_container_width=True,
+                type=(
+                    "primary" if st.session_state.auth_view == "forgot_password" else "secondary"
+                ),
+            ):
+                st.session_state.auth_view = "forgot_password"
+                st.rerun()
+
+        # Xử lý các trang xác thực
         if st.session_state.auth_view == "login":
             if login_page(cookies):
+                st.session_state.pages = "Home"  # Chuyển về Home sau khi đăng nhập
                 st.rerun()
-        else:
+        elif st.session_state.auth_view == "register":
             if register_page():
                 st.session_state.auth_view = "login"
                 st.sidebar.info("Please log in with your new account")
+                st.rerun()
+        elif st.session_state.auth_view == "forgot_password":
+            if forgot_password_page():
+                st.session_state.auth_view = "login"
+                st.sidebar.info("Reset link sent. Check your email and return to login.")
+                st.rerun()
+            # Thêm nút để chuyển sang Reset Password
+            if st.sidebar.button("Have a reset token?"):
+                st.session_state.auth_view = "reset_password"
+                st.rerun()
+        elif st.session_state.auth_view == "reset_password":
+            if reset_password_page():
+                st.session_state.auth_view = "login"
+                st.sidebar.info("Password reset successful. Please login.")
                 st.rerun()
     else:
         st.sidebar.success(f"Logged in as {st.session_state.username}")
         if st.sidebar.button("Logout"):
             logout(cookies)
+            st.session_state.pages = "Login"
             st.rerun()
 
         st.sidebar.title("Page Navigation")

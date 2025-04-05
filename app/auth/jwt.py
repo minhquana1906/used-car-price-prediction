@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import jwt as pyjwt
 from fastapi import Depends, HTTPException, status
@@ -18,9 +18,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def create_access_token(
-    subject: Union[str, Any], user_id: int, subscription_tier: str
+    subject: Union[str, Any],
+    user_id: int,
+    subscription_tier: str,
+    expires_delta: Optional[timedelta] = None
 ) -> str:
-    expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    if expires_delta:
+        expire = datetime.now() + expires_delta
+    else:
+        expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = {
         "sub": str(subject),

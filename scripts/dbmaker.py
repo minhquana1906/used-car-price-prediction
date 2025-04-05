@@ -14,7 +14,8 @@ from sqlalchemy.sql import func
 
 load_dotenv()
 
-DATABASE_URL = "mysql+pymysql://root:rootadmin123@localhost:3306/used_car_price"
+# DATABASE_URL = "mysql+pymysql://root:rootadmin123@localhost:3306/used_car_price"
+DATABASE_URL = "mysql+pymysql://appuser:rootadmin123@localhost:3306/used_car_db"
 
 
 # SQLAlchemy engine

@@ -45,7 +45,6 @@ def login_page(cookies):
             except Exception as e:
                 st.error(f"Login failed: {str(e)}")
                 return False
-
     return False
 
 
@@ -110,3 +109,83 @@ def logout(cookies):
     cookies.save()
     st.session_state.is_authenticated = False
     st.success("Logged out successfully!")
+
+def forgot_password_page():
+    st.title("🔑 Forgot Password")
+
+    with st.form("forgot_password_form"):
+        email = st.text_input("Email")
+        submitted = st.form_submit_button(
+            "Send Reset Link", use_container_width=True, type="primary"
+        )
+
+        if submitted:
+            if not email:
+                st.error("Please enter your email")
+                return False
+
+            try:
+                # Gửi email trong query parameters
+                response = requests.post(
+                    f"{API_URL}/auth/forgot-password",
+                    params={"email": email},  # Gửi email qua query string
+                )
+
+                if response.status_code == 202:
+                    st.success("If the email exists, a reset link has been sent. Please check your inbox.")
+                    return True
+                else:
+                    error_detail = response.json().get("detail", "Unknown error")
+                    st.error(f"Failed to send reset link: {error_detail}")
+                    return False
+            except Exception as e:
+                st.error(f"Failed to send reset link: {str(e)}")
+                return False
+
+    return False
+
+def reset_password_page():
+    st.title("🔑 Reset Password")
+
+    token = st.text_input("Paste your reset token from email")
+
+    with st.form("reset_password_form"):
+        new_password = st.text_input("New Password", type="password")
+        confirm_password = st.text_input("Confirm Password", type="password")
+        submitted = st.form_submit_button(
+            "Reset Password", use_container_width=True, type="primary"
+        )
+
+        if submitted:
+            if not token:
+                st.error("Please enter your reset token")
+                return False
+
+            if not new_password or not confirm_password:
+                st.error("Please fill in all fields")
+                return False
+
+            if new_password != confirm_password:
+                st.error("Passwords do not match")
+                return False
+
+            try:
+                # Sửa thành gửi JSON body thay vì query parameters
+                response = requests.post(
+                    f"{API_URL}/auth/reset-password",
+                    json={  # Gửi dữ liệu dưới dạng JSON
+                        "token": token,
+                        "new_password": new_password
+                    }
+                )
+
+                if response.status_code == 200:
+                    st.success("Password reset successfully! Please login.")
+                    return True
+                else:
+                    error_detail = response.json().get("detail", "Unknown error")
+                    st.error(f"Reset failed: {error_detail}")
+                    return False
+            except Exception as e:
+                st.error(f"Reset failed: {str(e)}")
+                return False

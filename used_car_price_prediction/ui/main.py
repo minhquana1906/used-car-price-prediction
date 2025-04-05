@@ -2,6 +2,14 @@ import os
 from datetime import datetime
 
 import streamlit as st
+
+st.set_page_config(
+    page_title="Used Car Price Prediction",
+    page_icon="🚗",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
 from streamlit_cookies_manager import EncryptedCookieManager
 
 from used_car_price_prediction.ui.components.footer import render_footer
@@ -13,13 +21,6 @@ from used_car_price_prediction.ui.page_modules.home import render_home_page
 from used_car_price_prediction.ui.page_modules.prediction import \
     render_prediction_page
 from used_car_price_prediction.ui.utils.data_loader import load_data_from_db
-
-st.set_page_config(
-    page_title="Used Car Price Prediction",
-    page_icon="🚗",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
 
 cookies = EncryptedCookieManager(password=os.getenv("COOKIE_PASSWORD"))
 if not cookies.ready():
