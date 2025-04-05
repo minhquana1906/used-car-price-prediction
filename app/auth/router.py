@@ -8,8 +8,8 @@ from app.auth.helper import (create_user, generate_password_reset_token,
                              get_user_by_email, get_user_by_username,
                              send_reset_password_email, update_user_password,
                              verify_password, verify_password_reset_token)
-from app.auth.jwt import create_access_token, get_current_user
 from app.auth.models import Token, UserCreate, UserDB, UserLogin
+from app.auth.my_jwt import create_access_token, get_current_user
 from scripts.dbmaker import User, get_db
 
 router = APIRouter()
@@ -35,18 +35,15 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
             username=user_in.username,
             email=user_in.email,
             password=user_in.password,
-            subscription_tier=user_in.subscription_tier,
-            api_key=None,
+            subscription_plan_id=user_in.subscription_plan_id,
         )
 
         return UserDB(
             id=user.id,
             username=user.username,
             email=user.email,
-            api_key=user.api_key,
-            subscription_tier=user.subscription_tier,
+            subscription_plan_id=user.subscription_plan_id,
             created_at=user.created_at,
-            is_active=user.is_active,
         )
     except Exception as e:
         db.rollback()
@@ -81,7 +78,7 @@ def login_user(
         access_token = create_access_token(
             subject=user.username,
             user_id=user.id,
-            subscription_tier=user.subscription_tier,
+            subscription_plan_id=user.subscription_plan_id,
         )
 
         return {
@@ -91,10 +88,8 @@ def login_user(
                 id=user.id,
                 username=user.username,
                 email=user.email,
-                subscription_tier=user.subscription_tier,
-                api_key=user.api_key,
+                subscription_plan_id=user.subscription_plan_id,
                 created_at=user.created_at,
-                is_active=user.is_active,
             ),
         }
     except Exception as e:
@@ -112,10 +107,8 @@ def get_user_me(current_user: User = Depends(get_current_user)):
             id=current_user.id,
             username=current_user.username,
             email=current_user.email,
-            subscription_tier=current_user.subscription_tier,
-            api_key=current_user.api_key,
+            subscription_plan_id=current_user.subscription_plan_id,
             created_at=current_user.created_at,
-            is_active=current_user.is_active,
         )
     except Exception as e:
         logger.error(f"Get user error: {str(e)}")

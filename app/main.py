@@ -1,17 +1,25 @@
 import os
+import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 
 import pandas as pd
 import redis.asyncio as redis
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from joblib import load
 from loguru import logger
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from sqlalchemy import func, select
 
-from app.auth.jwt import get_current_user
+from app.auth.limiter import (get_subscription_limits, limiter,
+                              rate_limit_request)
+from app.auth.my_jwt import get_current_user
 from app.auth.router import router as auth_router
-from scripts.dbmaker import User
+from app.middleware import APIUsageMiddleware, AuthMiddleware
+from scripts.dbmaker import ApiUsage, User, get_db
 from utils.api_helper import (CarModel, get_redis_cache_async, preprocess_data,
                               run_in_threadpool, set_redis_cache_async)
 
@@ -79,6 +87,10 @@ app = FastAPI(
 )
 
 app.include_router(auth_router, prefix="/auth", tags=["authentication"])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(AuthMiddleware)
+app.add_middleware(APIUsageMiddleware)
 
 
 @app.get("/")
@@ -97,7 +109,10 @@ def status():
 
 
 @app.post("/predict")
-async def predict(car: CarModel, current_user: User = Depends(get_current_user)):
+@limiter.limit("user_limit")
+async def predict(
+    request: Request, car: CarModel, current_user: User = Depends(rate_limit_request)
+):
     """Predict the price of a car based on its features and return with error margin."""
     global model_pipeline, error_margin
 
@@ -106,15 +121,25 @@ async def predict(car: CarModel, current_user: User = Depends(get_current_user))
 
     try:
         data = car.model_dump()
-
+        is_cached = False
         cache_key = f"car_prediction:{hash(frozenset(data.items()))}"
+
         if redis_client:
             cached_result = await get_redis_cache_async(redis_client, cache_key)
             if cached_result:
                 logger.info("Cache hit! Returning cached result.")
+                is_cached = True
+                result = eval(cached_result)
+
+                # Store the prediction result in request.state so middleware can access it
+                request.state.prediction_result = {
+                    "predicted_price": result["predicted price"],
+                    "is_cached": True,
+                }
+
                 return JSONResponse(
                     status_code=200,
-                    content=eval(cached_result),
+                    content=result,
                 )
 
         processed_data = preprocess_data(data)
@@ -134,6 +159,12 @@ async def predict(car: CarModel, current_user: User = Depends(get_current_user))
             "acceptable range": f"{round(lower_bound, 2)} - {round(upper_bound, 2)}",
         }
 
+        # Store the prediction result in request.state so middleware can access it
+        request.state.prediction_result = {
+            "predicted_price": round(prediction_value, 2),
+            "is_cached": False,
+        }
+
         if redis_client:
             await set_redis_cache_async(
                 redis_client, cache_key, str(result), DEFAULT_EXPIRATION_TIME
@@ -147,7 +178,10 @@ async def predict(car: CarModel, current_user: User = Depends(get_current_user))
 
 
 @app.get("/cached-predictions")
-async def get_cached_predictions(current_user: User = Depends(get_current_user)):
+@limiter.limit("user_limit")
+async def get_cached_predictions(
+    request: Request, current_user: User = Depends(rate_limit_request)
+):
     """Return all currently cached predictions."""
     if redis_client is None:
         return {"status": "Redis not available"}
@@ -166,7 +200,10 @@ async def get_cached_predictions(current_user: User = Depends(get_current_user))
 
 
 @app.delete("/cached-predictions")
-async def delete_cached_predictions(current_user: User = Depends(get_current_user)):
+@limiter.limit("user_limit")
+async def delete_cached_predictions(
+    request: Request, current_user: User = Depends(get_current_user)
+):
     """Delete all cached predictions."""
     if redis_client is None:
         return {"status": "Redis not available"}
@@ -182,6 +219,55 @@ async def delete_cached_predictions(current_user: User = Depends(get_current_use
     except Exception as e:
         logger.error(f"Cache deletion error: {str(e)}")
         return {"status": "error", "message": str(e)}
+
+
+@app.get("/subscription-limits")
+def get_limits(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Get the current user's subscription limits and usage statistics"""
+
+    minute_limit, day_limit = get_subscription_limits(
+        current_user.subscription_plan_id, db
+    )
+
+    today = datetime.now().date()
+    today_start = datetime(today.year, today.month, today.day)
+
+    result = db.execute(
+        select(func.count()).where(
+            ApiUsage.user_id == current_user.id,
+            ApiUsage.request_timestamp >= today_start,
+        )
+    )
+    day_usage = result.scalar() or 0
+
+    minute_ago = datetime.now() - timedelta(minutes=1)
+    result = db.execute(
+        select(func.count()).where(
+            ApiUsage.user_id == current_user.id,
+            ApiUsage.request_timestamp >= minute_ago,
+        )
+    )
+    minute_usage = result.scalar() or 0
+
+    return {
+        "subscription_plan_id": current_user.subscription_plan_id,
+        "limits": {
+            "per_minute": minute_limit,
+            "per_day": day_limit,
+        },
+        "current_usage": {
+            "minute": minute_usage,
+            "day": day_usage,
+        },
+        "remaining": {
+            "minute": max(0, minute_limit - minute_usage),
+            "day": max(0, day_limit - day_usage),
+        },
+    }
 
 
 if __name__ == "__main__":

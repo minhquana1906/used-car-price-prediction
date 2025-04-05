@@ -57,9 +57,19 @@ def register_page():
         password = st.text_input("Password", type="password")
         confirm_password = st.text_input("Confirm Password", type="password")
 
-        subscription_tier = st.selectbox(
-            "Subscription Tier", options=["Free", "Basic", "Premium"], index=0
+        subscription_plan_id = {
+            "Free": 1,
+            "Basic": 2,
+            "Premium": 3,
+        }
+
+        selected_plan = st.selectbox(
+            "Select Subscription Plan",
+            options=list(subscription_plan_id.keys()),
+            index=0,
         )
+
+        subscription_plan_id = subscription_plan_id[selected_plan]
 
         submitted = st.form_submit_button(
             "Register", use_container_width=True, type="primary"
@@ -81,7 +91,7 @@ def register_page():
                         "username": username,
                         "email": email,
                         "password": password,
-                        "subscription_tier": subscription_tier,
+                        "subscription_plan_id": subscription_plan_id,
                     },
                 )
 

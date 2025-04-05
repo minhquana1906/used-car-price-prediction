@@ -41,16 +41,14 @@ def create_user(
     username: str,
     email: str,
     password: str,
-    api_key: Optional[str] = None,
-    subscription_tier: str = "Free",
+    subscription_plan_id: int = 1,
 ) -> User:
     password_hash = get_password_hash(password)
     user = User(
         username=username,
         email=email,
         password_hash=password_hash,
-        subscription_tier=subscription_tier,
-        api_key=api_key,
+        subscription_plan_id=subscription_plan_id,
     )
     db.add(user)
     db.commit()
@@ -58,7 +56,7 @@ def create_user(
     return user
 
 def generate_password_reset_token(email: str) -> str:
-    from app.auth.jwt import create_access_token
+    from app.auth.my_jwt import create_access_token
     return create_access_token(
         subject=email,
         user_id=0,

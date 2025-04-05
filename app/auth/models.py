@@ -11,7 +11,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=128)
-    subscription_tier: str = "Free"
+    subscription_plan_id: int = 1
 
 
 class UserLogin(BaseModel):
@@ -21,10 +21,8 @@ class UserLogin(BaseModel):
 
 class UserDB(UserBase):
     id: int
-    subscription_tier: str
-    api_key: Optional[str] = None
+    subscription_plan_id: int
     created_at: datetime
-    is_active: bool = True
 
     class Config:
         from_attributes = True
@@ -40,4 +38,4 @@ class TokenPayLoad(BaseModel):
     sub: str
     exp: float
     user_id: int
-    subscription_tier: str
+    subscription_plan_id: int
