@@ -1,10 +1,5 @@
 import os
-import random
-import string
-import uuid
-from datetime import datetime, timedelta
 
-import bcrypt
 from dotenv import load_dotenv
 from loguru import logger
 from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
@@ -14,9 +9,7 @@ from sqlalchemy.sql import func
 
 load_dotenv()
 
-DATABASE_URL = "mysql+pymysql://root:rootadmin123@localhost:3306/used_car_price"
-# DATABASE_URL = "mysql+pymysql://appuser:rootadmin123@localhost:3306/used_car_db"
-
+DATABASE_URL = os.getenv("APP_DATABASE_URL")
 
 # SQLAlchemy engine
 engine = create_engine(DATABASE_URL)

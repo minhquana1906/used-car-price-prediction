@@ -4,7 +4,8 @@ import requests
 import streamlit as st
 from loguru import logger
 
-# API endpoint
+from used_car_price_prediction.ui.utils.limiter import get_subscription_limits
+
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 
@@ -34,9 +35,13 @@ def login_page(cookies):
                     cookies["token"] = token_data["access_token"]
                     cookies["username"] = username
                     cookies.save()
+
                     st.session_state.is_authenticated = True
                     st.session_state.token = token_data["access_token"]
                     st.session_state.username = username
+
+                    get_subscription_limits(st.session_state.token, force_refresh=True)
+
                     st.success("Login successful!")
                     return True
                 else:
@@ -114,13 +119,22 @@ def register_page():
 
 def logout(cookies):
     if "token" in st.session_state:
-        st.session_state.token = None
+        del st.session_state.token
         del cookies["token"]
+
     if "username" in st.session_state:
-        st.session_state.username = None
+        del st.session_state.username
         del cookies["username"]
-    cookies.save()
+
+    if "api_usage_data" in st.session_state:
+        del st.session_state.api_usage_data
+
+    if "prediction_result" in st.session_state:
+        del st.session_state.prediction_result
+
     st.session_state.is_authenticated = False
+
+    cookies.save()
     st.success("Logged out successfully!")
 
 

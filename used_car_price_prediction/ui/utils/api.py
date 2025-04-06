@@ -24,7 +24,6 @@ def predict_price(data):
         }
         response = requests.post(PREDICT_ENDPOINT, json=data, headers=headers)
 
-        # time.sleep(1)  # Simulate a delay for the API response
         get_subscription_limits(token, force_refresh=True)
         st.rerun()
 

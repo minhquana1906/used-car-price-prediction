@@ -104,8 +104,6 @@ def status():
 
 
 @app.post("/predict", tags=["api"])
-# @limiter.limit(free_tier_day_limit)
-# @limiter.limit(free_tier_minute_limit)
 async def predict(
     request: Request, car: CarModel, current_user: User = Depends(rate_limit_request)
 ):
@@ -241,6 +239,12 @@ def get_limits(
         )
     )
     minute_usage = result.scalar() or 0
+
+    if day_usage >= day_limit:
+        minute_limit = 0
+        logger.info(
+            f"User {current_user.id} has reached daily limit, showing minute limit as 0"
+        )
 
     return {
         "subscription_plan_id": current_user.subscription_plan_id,

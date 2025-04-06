@@ -9,13 +9,11 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 
 def get_subscription_limits(token, force_refresh=False):
-    if "api_usage_data" in st.session_state and not force_refresh:
-        current_data = st.session_state.api_usage_data
-        day_remain = current_data.get("remaining", {}).get("day", 0)
+    current_token = st.session_state.get("token", None)
 
-        if day_remain <= 0:
-            logger.warning("Day limit exhausted, skipping refresh of minute limit")
-            return current_data
+    if current_token != token:
+        force_refresh = True
+        logger.info("Token changed, forcing refresh of subscription limits")
 
     if force_refresh or "api_usage_data" not in st.session_state:
         try:
@@ -31,6 +29,9 @@ def get_subscription_limits(token, force_refresh=False):
                 return limits
             else:
                 logger.error(f"Error fetching limits: {limit_response.text}")
+                if current_token != token and "api_usage_data" in st.session_state:
+                    del st.session_state.api_usage_data
+                    logger.warning("Removed stale API usage data due to token change")
                 return st.session_state.get("api_usage_data", None)
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed: {str(e)}")

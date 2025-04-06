@@ -91,25 +91,45 @@ def render_prediction_page(data):
         calculated_age = current_year - selected_year
         st.info(f"The car is approximately {calculated_age} years old")
 
-        # Predict button
-    if st.button("✨ Predict Price ✨", type="primary", use_container_width=True):
-        input_data = {
-            "vehicleType": selected_vehicle_type,
-            "gearbox": selected_gearbox,
-            "powerPS": selected_power,
-            "model": selected_model,
-            "kilometer": selected_km,
-            "fuelType": selected_fuel_type,
-            "brand": selected_brand,
-            "notRepairedDamage": selected_damaged,
-            "yearOfRegistration": selected_year,
-        }
+    can_make_predictions = True
+    if "api_usage_data" in st.session_state:
+        limits_data = st.session_state.api_usage_data
+        day_remain = limits_data.get("remaining", {}).get("day", 0)
+        minute_remain = limits_data.get("remaining", {}).get("minute", 0)
 
-        with st.spinner("⏳️Predicting..."):
-            result = predict_price(input_data)
+        if day_remain <= 0 or minute_remain <= 0:
+            can_make_predictions = False
 
-            st.session_state.prediction_result = result
-            # st.rerun()
+    if can_make_predictions:
+        if st.button("✨ Predict Price ✨", type="primary", use_container_width=True):
+            input_data = {
+                "vehicleType": selected_vehicle_type,
+                "gearbox": selected_gearbox,
+                "powerPS": selected_power,
+                "model": selected_model,
+                "kilometer": selected_km,
+                "fuelType": selected_fuel_type,
+                "brand": selected_brand,
+                "notRepairedDamage": selected_damaged,
+                "yearOfRegistration": selected_year,
+            }
+
+            with st.spinner("⏳️Predicting..."):
+                result = predict_price(input_data)
+
+                st.session_state.prediction_result = result
+
+    else:
+        st.button(
+            "✨ Predict Price ✨",
+            disabled=True,
+            type="primary",
+            use_container_width=True,
+            help="You have reached your API usage limits",
+        )
+        st.warning(
+            "⚠️ You have reached your API usage limit. Please try again later or upgrade your plan."
+        )
 
     if st.session_state.prediction_result:
         st.success("🎉 Prediction Complete!")
