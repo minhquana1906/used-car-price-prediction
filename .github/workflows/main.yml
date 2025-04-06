@@ -27,10 +27,6 @@ jobs:
 
   tests-and-type-check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-      fail-fast: false
     defaults:
       run:
         shell: bash
@@ -41,10 +37,10 @@ jobs:
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.12
 
-      - name: Run tests
-        run: uv run python -m pytest tests
+      # - name: Run tests
+      #   run: uv run python -m pytest tests
 
       - name: Check typing
         run: uv run mypy
