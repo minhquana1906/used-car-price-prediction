@@ -1,10 +1,11 @@
 import pandas as pd
 import streamlit as st
+from loguru import logger
 from sqlalchemy import text
 
 from scripts.dbmaker import SessionLocal
 
-DATA_PATH = "./datasets/autos_cleaned.csv"
+DATA_PATH = "./data/processed/autos_cleaned.csv"
 
 
 @st.cache_data()
@@ -18,7 +19,8 @@ def load_data_from_csv():
         st.error("Dataset not found. Please check the path.")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+        logger.error(f"An error occurred: {str(e)}")
+        st.error(f"An error occurred, cannot load data.")
         return pd.DataFrame()
 
 
@@ -52,16 +54,16 @@ def load_data_from_db():
 
             df.rename(columns=column_mapping, inplace=True)
 
-            # st.success(f"Loaded {len(df)} records from the database.")
             return df
         except Exception as e:
-            st.error(f"Error executing query: {str(e)}")
-            # st.warning(
-            #     "Failed to load data from the database. Loading from CSV instead."
-            # )
+            logger.error(f"Error executing query: {str(e)}")
+            st.error(f"Cannot load data from database.")
+
             df = load_data_from_csv()
             return df
         finally:
             db.close()
     except Exception as e:
-        st.error(f"Error connecting to the database: {str(e)}")
+        logger.error(f"Error connecting to the database: {str(e)}")
+        st.error(f"Cannot connect to the database.")
+        return pd.DataFrame()

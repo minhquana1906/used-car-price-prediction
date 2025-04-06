@@ -1,14 +1,15 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from loguru import logger
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from app.auth.helper import (create_user, generate_password_reset_token,
                              get_user_by_email, get_user_by_username,
                              send_reset_password_email, update_user_password,
                              verify_password, verify_password_reset_token)
-from app.auth.models import Token, UserCreate, UserDB, UserLogin
+from app.auth.models import (ResetPasswordRequest, Token, UserCreate, UserDB,
+                             UserLogin)
 from app.auth.my_jwt import create_access_token, get_current_user
 from scripts.dbmaker import User, get_db
 
@@ -117,11 +118,10 @@ def get_user_me(current_user: User = Depends(get_current_user)):
             detail=f"Failed to retrieve user: {str(e)}",
         )
 
+
 @router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
 async def forgot_password(
-    email: EmailStr,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    email: EmailStr, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     try:
         user = get_user_by_email(db, email)
@@ -135,7 +135,7 @@ async def forgot_password(
             send_reset_password_email,
             email_to=user.email,
             username=user.username,
-            reset_link=reset_link
+            reset_link=reset_link,
         )
 
         return {"message": "If the email exists, a reset link has been sent"}
@@ -144,31 +144,27 @@ async def forgot_password(
         logger.error(f"Forgot password error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to process password reset request"
+            detail="Failed to process password reset request",
         )
 
-class ResetPasswordRequest(BaseModel):
-    token: str
-    new_password: str
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
 async def reset_password(
-    request: ResetPasswordRequest,  # Nhận dữ liệu từ JSON body
-    db: Session = Depends(get_db)
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db),
 ):
     try:
         email = verify_password_reset_token(request.token)
         if not email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid or expired reset token"
+                detail="Invalid or expired reset token",
             )
 
         user = get_user_by_email(db, email)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid reset request"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset request"
             )
 
         update_user_password(db, user, request.new_password)
@@ -180,5 +176,5 @@ async def reset_password(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to reset password"
+            detail="Failed to reset password",
         )

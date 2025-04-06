@@ -51,25 +51,8 @@ ui: ## Run only the Streamlit frontend
 	@uv run streamlit run used_car_price_prediction/ui/main.py
 
 .PHONY: application
-application:
-	@echo "🚀 Cleaning dataset to display in Data Analysis section in UI"
-	@uv run scripts/clean_dataset.py
-	@echo "🚀 Trigger preprocessing data pipeline"
-	@uv run used_car_price_prediction/pipeline/main.py
-	@echo "🚀 Running FastAPI backend service"
-	@uv run app/main.py &
-	@echo "🚀 Running the Streamlit frontend service"
-	@uv run streamlit run used_car_price_prediction/ui/main.py
+application: api ui
 
-
-# For demo purposes
-.PHONY: export_env
-export_env:
-	@echo "🚀 Setting environmental variables"
-	@export MLFLOW_TRACKING_URI=http://localhost:5000
-	@export MLFLOW_S3_ENDPOINT_URL=http://localhost:9000
-	@export MINIO_ROOT_USER=admin123
-	@export MINIO_ROOT_PASSWORD=admin123
 
 .PHONY: help
 help:

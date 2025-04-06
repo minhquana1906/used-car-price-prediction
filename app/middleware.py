@@ -6,6 +6,7 @@ from jose import jwt
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.auth.limiter import get_subscription_limits
 from app.auth.my_jwt import ALGORITHM, SECRET_KEY
 from scripts.dbmaker import ApiUsage, User, get_db
 
@@ -102,13 +103,27 @@ class AuthMiddleware(BaseHTTPMiddleware):
                         user = db.query(User).filter(User.username == username).first()
 
                         if user:
+                            # Set user in request state
                             request.state.user = user
+
+                            # Set rate limit info for this user based on subscription
+                            try:
+                                minute_limit, day_limit = get_subscription_limits(
+                                    user.subscription_plan_id, db
+                                )
+                                # Set dynamically for the limiter to use
+                                request.state.dynamic_rate_limit = (
+                                    f"{minute_limit}/minute;{day_limit}/day"
+                                )
+                            except Exception as rate_limit_error:
+                                logger.error(f"Rate limit error: {rate_limit_error}")
+
                             logger.info(
                                 f"User authenticated: {username} (ID: {user.id})"
                             )
                         else:
                             logger.warning(f"User not found in database: {username}")
-                except jwt.PyJWTError as jwt_error:
+                except jwt.JWTError as jwt_error:
                     logger.error(f"JWT validation failed: {jwt_error}")
             else:
                 logger.info("No valid authorization header found")

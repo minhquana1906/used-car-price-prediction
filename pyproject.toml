@@ -26,6 +26,7 @@ dependencies = [
     "numpy==1.26.4",
     "pandas>=2.2.3",
     "plotly>=6.0.1",
+    "postmarker>=1.0",
     "pymysql>=1.1.1",
     "python-jose[cryptography]>=3.4.0",
     "redis>=5.2.1",

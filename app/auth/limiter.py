@@ -1,14 +1,24 @@
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
+import redis
 from fastapi import Depends, HTTPException, Request
+from loguru import logger
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 
 from app.auth.my_jwt import get_current_user
-from scripts.dbmaker import SubscriptionPlan, User, get_db
+from scripts.dbmaker import ApiUsage, SubscriptionPlan, User, get_db
+
+try:
+    redis_storage = "redis://localhost:6379"
+    logger.info(f"Configuring rate limiter with Redis: {redis_storage}")
+except Exception as e:
+    logger.error(f"Redis configuration error: {e}")
+    redis_storage = None
 
 SUBSCRIPTION_LIMITS = {
     1: {
@@ -31,7 +41,24 @@ SUBSCRIPTION_LIMITS = {
     },
 }
 
-limiter = Limiter(key_func=get_remote_address)
+
+def get_user_id_key(request: Request) -> str:
+    if hasattr(request.state, "user") and request.state.user:
+        return f"user:{request.state.user.id}"
+    return f"ip:{get_remote_address(request)}"
+
+
+if redis_storage:
+    limiter = Limiter(
+        key_func=get_user_id_key,
+        storage_uri=redis_storage,
+        strategy="fixed-window",
+    )
+    logger.success("Rate limiter initialized with Redis storage")
+else:
+    limiter = Limiter(key_func=get_user_id_key)
+    logger.warning("Rate limiter initialized with in-memory storage")
+
 
 subscription_cache: Dict[int, Tuple[str, int, int, float]] = {}
 subscription_cache_expiry = datetime.now()
@@ -84,12 +111,45 @@ def get_subscription_limits(
 def rate_limit_request(
     request: Request,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
-    """Dependency to enforce rate limits based on user's subscription tier"""
-    tier_id = current_user.subscription_plan_id
-    minute_limit, day_limit = get_subscription_limits(tier_id, db)
+    try:
+        db = next(get_db())
+        minute_limit, day_limit = get_subscription_limits(
+            current_user.subscription_plan_id, db
+        )
 
-    request.state.view_rate_limit = f"{minute_limit}/minute;{day_limit}/day"
+        today = datetime.now().date()
+        today_start = datetime(today.year, today.month, today.day)
+
+        result = db.execute(
+            select(func.count()).where(
+                ApiUsage.user_id == current_user.id,
+                ApiUsage.request_timestamp >= today_start,
+            )
+        )
+        day_usage = result.scalar() or 0
+
+        if day_usage >= day_limit:
+            minute_limit = 0
+            logger.warning(
+                f"User {current_user.id} has reached daily limit, setting minute limit to 0"
+            )
+
+            raise HTTPException(
+                status_code=429,
+                detail=f"Daily request limit ({day_limit}) exceeded. Please try again tomorrow.",
+            )
+
+        request.state.minute_limit = minute_limit
+        request.state.day_limit = day_limit
+        request.state.day_usage = day_usage
+
+        logger.debug(
+            f"User {current_user.id} has limits: {minute_limit}/minute, {day_limit}/day, used: {day_usage}/day"
+        )
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error in rate_limit_request: {e}")
 
     return current_user

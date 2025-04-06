@@ -40,7 +40,6 @@ logger.add("logs/api.log", rotation="500 MB", level="INFO")
 async def lifespan(app: FastAPI):
     global model_pipeline, redis_client, error_margin
 
-    # Load pipeline
     if os.path.exists(FULL_PIPELINE_PATH):
         logger.info(f"Loading full pipeline from {FULL_PIPELINE_PATH}")
         model_pipeline = await run_in_threadpool(load, FULL_PIPELINE_PATH)
@@ -49,7 +48,6 @@ async def lifespan(app: FastAPI):
         logger.error(f"Pipeline file not found at {FULL_PIPELINE_PATH}")
         raise RuntimeError("Model pipeline not found")
 
-    # Load metrics
     if os.path.exists(METRICS_PATH):
         metrics_df = await run_in_threadpool(pd.read_csv, METRICS_PATH)
         error_margin = (
@@ -62,7 +60,6 @@ async def lifespan(app: FastAPI):
         logger.warning("Metrics file not found, using default error margin")
         error_margin = DEFAULT_ERROR_MARGIN
 
-    # Connect to Redis
     try:
         redis_client = redis.from_url("redis://localhost:6379", decode_responses=True)
         await redis_client.ping()
@@ -86,34 +83,32 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.include_router(auth_router, prefix="/auth", tags=["authentication"])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(AuthMiddleware)
 app.add_middleware(APIUsageMiddleware)
+app.include_router(auth_router, prefix="/auth", tags=["authentication"])
 
 
-@app.get("/")
+@app.get("/", tags=["health"])
 def root():
-    """Root endpoint"""
     return JSONResponse(
         status_code=200,
         content={"message": "Welcome to the Used Car Price Prediction API"},
     )
 
 
-@app.get("/status")
+@app.get("/status", tags=["health"])
 def status():
-    """Status check endpoint"""
     return JSONResponse(status_code=200, content={"model": model_pipeline is not None})
 
 
-@app.post("/predict")
-@limiter.limit("user_limit")
+@app.post("/predict", tags=["api"])
+# @limiter.limit(free_tier_day_limit)
+# @limiter.limit(free_tier_minute_limit)
 async def predict(
     request: Request, car: CarModel, current_user: User = Depends(rate_limit_request)
 ):
-    """Predict the price of a car based on its features and return with error margin."""
     global model_pipeline, error_margin
 
     if model_pipeline is None:
@@ -131,7 +126,6 @@ async def predict(
                 is_cached = True
                 result = eval(cached_result)
 
-                # Store the prediction result in request.state so middleware can access it
                 request.state.prediction_result = {
                     "predicted_price": result["predicted price"],
                     "is_cached": True,
@@ -159,7 +153,6 @@ async def predict(
             "acceptable range": f"{round(lower_bound, 2)} - {round(upper_bound, 2)}",
         }
 
-        # Store the prediction result in request.state so middleware can access it
         request.state.prediction_result = {
             "predicted_price": round(prediction_value, 2),
             "is_cached": False,
@@ -177,12 +170,10 @@ async def predict(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.get("/cached-predictions")
-@limiter.limit("user_limit")
+@app.get("/cached-predictions", tags=["api"])
 async def get_cached_predictions(
     request: Request, current_user: User = Depends(rate_limit_request)
 ):
-    """Return all currently cached predictions."""
     if redis_client is None:
         return {"status": "Redis not available"}
 
@@ -199,12 +190,10 @@ async def get_cached_predictions(
         return {"status": "error", "message": str(e)}
 
 
-@app.delete("/cached-predictions")
-@limiter.limit("user_limit")
+@app.delete("/cached-predictions", tags=["api"])
 async def delete_cached_predictions(
     request: Request, current_user: User = Depends(get_current_user)
 ):
-    """Delete all cached predictions."""
     if redis_client is None:
         return {"status": "Redis not available"}
 
@@ -221,7 +210,7 @@ async def delete_cached_predictions(
         return {"status": "error", "message": str(e)}
 
 
-@app.get("/subscription-limits")
+@app.get("/subscription-limits", tags=["api"])
 def get_limits(
     request: Request,
     current_user: User = Depends(get_current_user),

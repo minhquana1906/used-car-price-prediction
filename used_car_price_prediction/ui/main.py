@@ -80,8 +80,6 @@ def main():
         elif current_page == "About":
             render_about_page()
 
-    # render_footer()
-
 
 if __name__ == "__main__":
     main()

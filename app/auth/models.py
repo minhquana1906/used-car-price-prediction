@@ -39,3 +39,8 @@ class TokenPayLoad(BaseModel):
     exp: float
     user_id: int
     subscription_plan_id: int
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str

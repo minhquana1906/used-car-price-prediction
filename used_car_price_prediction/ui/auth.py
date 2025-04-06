@@ -1,11 +1,11 @@
-import json
-from datetime import datetime
+import os
 
 import requests
 import streamlit as st
+from loguru import logger
 
 # API endpoint
-API_URL = "http://localhost:8000"
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 
 def login_page(cookies):
@@ -43,7 +43,8 @@ def login_page(cookies):
                     st.error("Invalid username or password")
                     return False
             except Exception as e:
-                st.error(f"Login failed: {str(e)}")
+                logger.error(f"Login failed: {str(e)}")
+                st.error(f"Login failed.")
                 return False
     return False
 
@@ -100,10 +101,12 @@ def register_page():
                     return True
                 else:
                     error_detail = response.json().get("detail", "Unknown error")
-                    st.error(f"Registration failed: {error_detail}")
+                    logger.error(f"Registration failed: {error_detail}")
+                    st.error(f"Registration failed.")
                     return False
             except Exception as e:
-                st.error(f"Registration failed: {str(e)}")
+                logger.error(f"Registration failed: {str(e)}")
+                st.error(f"Registration failed.")
                 return False
 
     return False
@@ -120,6 +123,7 @@ def logout(cookies):
     st.session_state.is_authenticated = False
     st.success("Logged out successfully!")
 
+
 def forgot_password_page():
     st.title("🔑 Forgot Password")
 
@@ -135,29 +139,33 @@ def forgot_password_page():
                 return False
 
             try:
-                # Gửi email trong query parameters
                 response = requests.post(
                     f"{API_URL}/auth/forgot-password",
-                    params={"email": email},  # Gửi email qua query string
+                    params={"email": email},
                 )
 
                 if response.status_code == 202:
-                    st.success("If the email exists, a reset link has been sent. Please check your inbox.")
-                    return True
+                    st.info(
+                        f"If {email} really exists, a reset link has been sent. Please check your inbox."
+                    )
+                    return False
                 else:
                     error_detail = response.json().get("detail", "Unknown error")
-                    st.error(f"Failed to send reset link: {error_detail}")
+                    logger.error(f"Failed to send reset link: {error_detail}")
+                    st.error("Invalid email address")
                     return False
             except Exception as e:
-                st.error(f"Failed to send reset link: {str(e)}")
+                logger.error(f"Failed to send reset link: {str(e)}")
+                st.error("Invalid email address")
                 return False
 
     return False
 
+
 def reset_password_page():
     st.title("🔑 Reset Password")
 
-    token = st.text_input("Paste your reset token from email")
+    token = st.text_input("Paste your reset token from email", type="password")
 
     with st.form("reset_password_form"):
         new_password = st.text_input("New Password", type="password")
@@ -180,13 +188,12 @@ def reset_password_page():
                 return False
 
             try:
-                # Sửa thành gửi JSON body thay vì query parameters
                 response = requests.post(
                     f"{API_URL}/auth/reset-password",
-                    json={  # Gửi dữ liệu dưới dạng JSON
+                    json={
                         "token": token,
-                        "new_password": new_password
-                    }
+                        "new_password": new_password,
+                    },
                 )
 
                 if response.status_code == 200:
@@ -194,8 +201,9 @@ def reset_password_page():
                     return True
                 else:
                     error_detail = response.json().get("detail", "Unknown error")
-                    st.error(f"Reset failed: {error_detail}")
+                    logger.error(f"Reset failed: {error_detail}")
+                    st.error(f"Reset password failed.")
                     return False
             except Exception as e:
-                st.error(f"Reset failed: {str(e)}")
+                logger.error(f"Reset failed: {str(e)}")
                 return False

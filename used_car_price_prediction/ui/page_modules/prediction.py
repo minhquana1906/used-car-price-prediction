@@ -108,8 +108,8 @@ def render_prediction_page(data):
         with st.spinner("⏳️Predicting..."):
             result = predict_price(input_data)
 
-            # save result to session state
             st.session_state.prediction_result = result
+            # st.rerun()
 
     if st.session_state.prediction_result:
         st.success("🎉 Prediction Complete!")
@@ -167,7 +167,7 @@ def render_prediction_page(data):
             )
 
             st.plotly_chart(fig, use_container_width=True)
-            # Add details about the car for comparison
+
         st.subheader("Car Details")
         details_cols = st.columns(4)
 
@@ -191,7 +191,6 @@ def render_prediction_page(data):
         top_k = 10
         st.subheader(f"Top {top_k} similar cars in the dataset")
 
-        # configure the search to the same brand, model and more or less than 30% of the power and kilometers
         filtered_data = data[
             (data["brand"] == selected_brand)
             & (data["model"] == selected_model)
@@ -215,7 +214,6 @@ def render_prediction_page(data):
             ].head(top_k)
             st.dataframe(filtered_data_display, use_container_width=True)
 
-            # Add price comparison
             avg_price = filtered_data["price"].mean()
             price_diff = result["predicted price"] - avg_price
             if abs(price_diff) < 100:
