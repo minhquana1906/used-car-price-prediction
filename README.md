@@ -252,7 +252,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgements
 
-- The dataset used in this project comes from a Kaggle competition
+- The dataset [Used Cars](https://www.kaggle.com/datasets/thedevastatoruncovering-factors-that-affect-used-car-prices) from Kaggle
+- This app was built based on this template ([fpgmaas/cookiecutter-uv](https://github.com/fpgmaas/cookiecutter-uv))
 - Thanks to the open-source community for the amazing tools and libraries that made this project possible
 - Special thanks to all contributors who helped improve this project
 
