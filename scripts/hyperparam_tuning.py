@@ -5,7 +5,6 @@ from datetime import datetime
 
 import hydra
 import joblib
-import numpy as np
 import optuna
 import pandas as pd
 from joblib import dump, load

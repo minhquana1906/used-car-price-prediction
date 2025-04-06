@@ -1,5 +1,4 @@
 import os
-import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 
@@ -61,9 +60,12 @@ async def lifespan(app: FastAPI):
         error_margin = DEFAULT_ERROR_MARGIN
 
     try:
-        redis_client = redis.from_url("redis://localhost:6379", decode_responses=True)
+        redis_host = os.getenv("REDIS_HOST", "redis")
+        redis_port = os.getenv("REDIS_PORT", 6379)
+        redis_url = f"redis://{redis_host}:{redis_port}"
+        redis_client = redis.from_url(redis_url, decode_responses=True)
         await redis_client.ping()
-        logger.success("Connected to Redis successfully!")
+        logger.success(f"Connected to Redis at {redis_url}")
     except Exception as e:
         logger.error(f"Redis connection error: {e}")
         redis_client = None

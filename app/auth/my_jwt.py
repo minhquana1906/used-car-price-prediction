@@ -4,7 +4,7 @@ from typing import Any, Optional, Union
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+from jose import jwt
 from sqlalchemy.orm import Session
 
 from app.auth.models import TokenPayLoad
@@ -22,7 +22,7 @@ def create_access_token(
     user_id: int,
     subscription_plan_id: int,
     purpose: Optional[str] = None,
-    expires_delta: Optional[timedelta] = None
+    expires_delta: Optional[timedelta] = None,
 ) -> str:
     if expires_delta:
         expire = datetime.now() + expires_delta

@@ -1,12 +1,8 @@
-import json
 import os
 import random
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
-import matplotlib.pyplot as plt
-import pandas as pd
 import requests
 from loguru import logger
 

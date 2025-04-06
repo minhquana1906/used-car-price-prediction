@@ -8,8 +8,7 @@ from app.auth.helper import (create_user, generate_password_reset_token,
                              get_user_by_email, get_user_by_username,
                              send_reset_password_email, update_user_password,
                              verify_password, verify_password_reset_token)
-from app.auth.models import (ResetPasswordRequest, Token, UserCreate, UserDB,
-                             UserLogin)
+from app.auth.models import ResetPasswordRequest, Token, UserCreate, UserDB
 from app.auth.my_jwt import create_access_token, get_current_user
 from scripts.dbmaker import User, get_db
 

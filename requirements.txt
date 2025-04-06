@@ -1,0 +1,2 @@
+bcrypt>=4.3.0
+postmarker>=1.0

@@ -29,6 +29,52 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: api
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - mysql
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - APP_DATABASE_URL=${APP_DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - POSTMARK_SERVER_TOKEN=${POSTMARK_SERVER_TOKEN}
+      - SMTP_SENDER_EMAIL=${SMTP_SENDER_EMAIL}
+    networks:
+      - car_price_network
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: ui
+    restart: always
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    environment:
+      - API_URL=${DOCKER_API_URL}
+      - COOKIE_PASSWORD=${COOKIE_PASSWORD}
+      - APP_DATABASE_URL=${APP_DATABASE_URL}
+    networks:
+      - car_price_network
+
 
   # minio:
   #   image: minio/minio
@@ -99,49 +145,7 @@ services:
   #   networks:
   #     - car_price_network
 
-  # api:
-  #   build:
-  #     context: .
-  #     dockerfile: app/Dockerfile.api
-  #   container_name: api
-  #   restart: always
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - "8000:8000"
-  #   depends_on:
-  #     - redis
-  #     - mlflow
-  #   environment:
-  #     - REDIS_PORT=${REDIS_PORT}
-  #     - REDIS_HOST=${REDIS_HOST}
-  #   networks:
-  #     - car_price_network
-  #   volumes:
-  #     - ./data:/app/data
-  #     - ./models:/app/models
 
-  # ui:
-  #   build:
-  #     context: .
-  #     dockerfile: used_car_price_prediction/ui/Dockerfile.ui
-  #   container_name: ui
-  #   profiles: ["with-ui"]
-  #   restart: always
-  #   ports:
-  #     - "8501:8501"
-  #   depends_on:
-  #     - api
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./data=/app/data
-  #     - ./models=/app/models
-  #     - ./datasets=/app/datasets
-  #   environment:
-  #     - API_URL=${API_URL}
-  #   networks:
-  #     - car_price_network
 
 
 volumes:

@@ -1,7 +1,7 @@
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Tuple
 
-import redis
 from fastapi import Depends, HTTPException, Request
 from loguru import logger
 from slowapi import Limiter
@@ -14,8 +14,11 @@ from app.auth.my_jwt import get_current_user
 from scripts.dbmaker import ApiUsage, SubscriptionPlan, User, get_db
 
 try:
-    redis_storage = "redis://localhost:6379"
-    logger.info(f"Configuring rate limiter with Redis: {redis_storage}")
+    redis_host = os.getenv("REDIS_HOST", "redis")
+    redis_port = os.getenv("REDIS_PORT", 6379)
+
+    redis_storage = f"redis://{redis_host}:{redis_port}"
+    logger.debug(f"Configuring rate limiter with Redis: {redis_storage}")
 except Exception as e:
     logger.error(f"Redis configuration error: {e}")
     redis_storage = None
@@ -48,16 +51,26 @@ def get_user_id_key(request: Request) -> str:
     return f"ip:{get_remote_address(request)}"
 
 
-if redis_storage:
-    limiter = Limiter(
-        key_func=get_user_id_key,
-        storage_uri=redis_storage,
-        strategy="fixed-window",
+try:
+    if redis_storage:
+        limiter = Limiter(
+            key_func=get_user_id_key,
+            storage_uri=redis_storage,
+            strategy="fixed-window",
+        )
+        if hasattr(limiter.storage, "ping"):
+            limiter.storage.ping()
+        logger.success("Rate limiter initialized with Redis storage")
+    else:
+        raise ValueError("Redis storage URL not configured")
+except Exception as e:
+    logger.warning(
+        f"Failed to initialize Redis rate limiter: {e}. Falling back to in-memory storage."
     )
-    logger.success("Rate limiter initialized with Redis storage")
-else:
     limiter = Limiter(key_func=get_user_id_key)
-    logger.warning("Rate limiter initialized with in-memory storage")
+    logger.warning(
+        "Rate limiter initialized with in-memory storage - rate limits will not be shared across containers"
+    )
 
 
 subscription_cache: Dict[int, Tuple[str, int, int, float]] = {}
@@ -129,10 +142,12 @@ def rate_limit_request(
         )
         day_usage = result.scalar() or 0
 
+        request.state.user = current_user
+
         if day_usage >= day_limit:
             minute_limit = 0
             logger.warning(
-                f"User {current_user.id} has reached daily limit, setting minute limit to 0"
+                f"User {current_user.id} has reached daily limit ({day_usage}/{day_limit}), setting minute limit to 0"
             )
 
             raise HTTPException(

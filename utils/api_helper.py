@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 from functools import partial
-from typing import Any, Awaitable, Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
 import pandas as pd
 from loguru import logger

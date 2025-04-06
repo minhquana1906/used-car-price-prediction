@@ -545,6 +545,17 @@ wheels = [
 ]
 
 [[package]]
+name = "dotenv"
+version = "0.9.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dotenv" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b2/b7/545d2c10c1fc15e48653c91efde329a790f2eecfbbf2bd16003b5db2bab0/dotenv-0.9.9-py2.py3-none-any.whl", hash = "sha256:29cf74a087b31dafdb5a446b6d7e11cbce8ed2741540e2339c69fbef92c94ce9", size = 1892 },
+]
+
+[[package]]
 name = "ecdsa"
 version = "0.19.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2649,13 +2660,19 @@ dependencies = [
 
 [package.dev-dependencies]
 api = [
+    { name = "bcrypt" },
     { name = "fastapi", extra = ["standard"] },
     { name = "joblib" },
     { name = "loguru" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "postmarker" },
+    { name = "pymysql" },
+    { name = "python-jose", extra = ["cryptography"] },
+    { name = "redis" },
     { name = "scikit-learn" },
     { name = "slowapi" },
+    { name = "sqlalchemy" },
     { name = "xgboost" },
 ]
 dev = [
@@ -2680,11 +2697,17 @@ mlflow = [
     { name = "pymysql" },
 ]
 ui = [
+    { name = "dotenv" },
+    { name = "loguru" },
     { name = "matplotlib" },
     { name = "pandas" },
     { name = "plotly" },
+    { name = "pymysql" },
     { name = "requests" },
+    { name = "sqlalchemy" },
+    { name = "statsmodels" },
     { name = "streamlit" },
+    { name = "streamlit-cookies-manager" },
 ]
 
 [package.metadata]
@@ -2710,13 +2733,19 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 api = [
+    { name = "bcrypt", specifier = ">=4.3.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.11" },
     { name = "joblib", specifier = ">=1.4.2" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "numpy", specifier = "==1.26.4" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "postmarker", specifier = ">=1.0" },
+    { name = "pymysql", specifier = ">=1.1.1" },
+    { name = "python-jose", extras = ["cryptography"], specifier = ">=3.4.0" },
+    { name = "redis", specifier = ">=5.2.1" },
     { name = "scikit-learn", specifier = "==1.3.2" },
     { name = "slowapi", specifier = ">=0.1.9" },
+    { name = "sqlalchemy", specifier = ">=2.0.39" },
     { name = "xgboost", specifier = "==2.0.3" },
 ]
 dev = [
@@ -2741,11 +2770,17 @@ mlflow = [
     { name = "pymysql", specifier = "==1.1.1" },
 ]
 ui = [
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "loguru", specifier = ">=0.7.3" },
     { name = "matplotlib", specifier = ">=3.9.4" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "plotly", specifier = ">=6.0.1" },
+    { name = "pymysql", specifier = ">=1.1.1" },
     { name = "requests", specifier = ">=2.31.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.39" },
+    { name = "statsmodels", specifier = ">=0.14.0" },
     { name = "streamlit", specifier = ">=1.43.2" },
+    { name = "streamlit-cookies-manager", specifier = ">=0.2.0" },
 ]
 
 [[package]]

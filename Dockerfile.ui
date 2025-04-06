@@ -8,13 +8,13 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY uv.lock ./
 
-# Install only UI dependencies using dependency groups
+# Install only UI dependencies (excluding API dependencies)
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --include-groups ui --exclude-groups dev,mlflow, api
+    uv sync --frozen --no-install-project --only-group ui
 
 # Copy only the UI application files
 COPY used_car_price_prediction/ ./used_car_price_prediction/
-# COPY datasets/ ./datasets/
+COPY scripts/ ./scripts/
 
 # Then, use a final image without uv
 FROM python:3.12-slim-bookworm
@@ -31,12 +31,10 @@ USER app
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app:${PYTHONPATH}"
 
 # Expose the port Streamlit runs on
 EXPOSE 8501
-
-# Set the API URL environment variable
-ENV API_URL=http://api:8000
 
 # Run the Streamlit application
 CMD ["streamlit", "run", "used_car_price_prediction/ui/main.py", "--server.port=8501", "--server.address=0.0.0.0"]

@@ -10,12 +10,14 @@ COPY uv.lock ./
 
 # Install only API dependencies using dependency groups (excluding UI dependencies)
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --include-groups api --exclude-groups dev,mlflow,ui
+    uv sync --frozen --no-install-project --only-group api
 
 # Copy only the API application files
 COPY app/ ./app/
 COPY models/ ./models/
 COPY logs/ ./logs/
+COPY utils/ ./utils/
+COPY scripts/ ./scripts/
 
 # Then, use a final image without uv
 FROM python:3.12-slim-bookworm
