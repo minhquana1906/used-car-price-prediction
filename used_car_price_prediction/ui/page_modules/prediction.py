@@ -116,8 +116,8 @@ def render_prediction_page(data):
 
             with st.spinner("⏳️Predicting..."):
                 result = predict_price(input_data)
-
-                st.session_state.prediction_result = result
+                if result:
+                    st.rerun()
 
     else:
         st.button(

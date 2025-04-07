@@ -216,8 +216,6 @@ def get_limits(
     current_user: User = Depends(get_current_user),
     db=Depends(get_db),
 ):
-    """Get the current user's subscription limits and usage statistics"""
-
     minute_limit, day_limit = get_subscription_limits(
         current_user.subscription_plan_id, db
     )

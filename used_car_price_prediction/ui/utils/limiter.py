@@ -94,3 +94,7 @@ def render_usage_limits():
 
         if day_remain <= 0:
             st.sidebar.warning("⚠️ You have reached your daily request limit!")
+
+        if st.sidebar.button("🔁 Refresh Now", type="secondary"):
+            get_subscription_limits(st.session_state.token, force_refresh=True)
+            st.rerun()

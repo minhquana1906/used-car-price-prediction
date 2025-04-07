@@ -43,7 +43,7 @@ services:
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
-      - APP_DATABASE_URL=${APP_DATABASE_URL}
+      - APP_DATABASE_URL=${DOCKER_APP_DATABASE_URL}
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
@@ -71,7 +71,7 @@ services:
     environment:
       - API_URL=${DOCKER_API_URL}
       - COOKIE_PASSWORD=${COOKIE_PASSWORD}
-      - APP_DATABASE_URL=${APP_DATABASE_URL}
+      - APP_DATABASE_URL=${DOCKER_APP_DATABASE_URL}
     networks:
       - car_price_network
 

@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, Tuple
 
+import redis
 from fastapi import Depends, HTTPException, Request
 from loguru import logger
 from slowapi import Limiter
@@ -58,9 +59,13 @@ try:
             storage_uri=redis_storage,
             strategy="fixed-window",
         )
-        if hasattr(limiter.storage, "ping"):
-            limiter.storage.ping()
-        logger.success("Rate limiter initialized with Redis storage")
+        try:
+            redis_client = redis.from_url(redis_storage)
+            redis_client.ping()
+            logger.success("Rate limiter initialized with Redis storage")
+        except Exception as redis_error:
+            logger.warning(f"Redis connection test failed: {redis_error}")
+            raise ValueError(f"Redis connection failed: {redis_error}")
     else:
         raise ValueError("Redis storage URL not configured")
 except Exception as e:
@@ -133,6 +138,7 @@ def rate_limit_request(
 
         today = datetime.now().date()
         today_start = datetime(today.year, today.month, today.day)
+        minute_ago = datetime.now() - timedelta(minutes=1)
 
         result = db.execute(
             select(func.count()).where(
@@ -155,16 +161,37 @@ def rate_limit_request(
                 detail=f"Daily request limit ({day_limit}) exceeded. Please try again tomorrow.",
             )
 
+        # check minute usage
+        result = db.execute(
+            select(func.count()).where(
+                ApiUsage.user_id == current_user.id,
+                ApiUsage.request_timestamp >= minute_ago,
+            )
+        )
+        minute_usage = result.scalar() or 0
+        if minute_usage >= minute_limit:
+            logger.warning(
+                f"User {current_user.id} has reached minute limit of {minute_limit}"
+            )
+            raise HTTPException(
+                status_code=429,
+                detail=f"Minute request limit ({minute_limit}) exceeded. Please try again later.",
+            )
+
         request.state.minute_limit = minute_limit
         request.state.day_limit = day_limit
+        request.state.minute_usage = minute_usage
         request.state.day_usage = day_usage
 
         logger.debug(
-            f"User {current_user.id} has limits: {minute_limit}/minute, {day_limit}/day, used: {day_usage}/day"
+            f"User {current_user.id} has limits: {minute_limit}/minute, {day_limit}/day, used: {minute_usage}/minute, {day_usage}/day"
         )
     except HTTPException as he:
         raise he
     except Exception as e:
         logger.error(f"Error in rate_limit_request: {e}")
-
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error while checking rate limits",
+        )
     return current_user
