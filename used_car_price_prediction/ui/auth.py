@@ -39,10 +39,8 @@ def login_page(cookies):
                     st.session_state.is_authenticated = True
                     st.session_state.token = token_data["access_token"]
                     st.session_state.username = username
-
-                    get_subscription_limits(st.session_state.token, force_refresh=True)
-
                     st.success("Login successful!")
+                    get_subscription_limits(st.session_state.token, force_refresh=True)
                     return True
                 else:
                     st.error("Invalid username or password")
@@ -129,8 +127,8 @@ def logout(cookies):
     if "api_usage_data" in st.session_state:
         del st.session_state.api_usage_data
 
-    if "prediction_result" in st.session_state:
-        del st.session_state.prediction_result
+    # if "prediction_result" in st.session_state:
+    #     del st.session_state.prediction_result
 
     st.session_state.is_authenticated = False
 

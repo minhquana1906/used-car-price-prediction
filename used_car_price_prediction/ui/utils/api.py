@@ -25,10 +25,12 @@ def predict_price(data):
         response = requests.post(PREDICT_ENDPOINT, json=data, headers=headers)
 
         get_subscription_limits(token, force_refresh=True)
-        st.rerun()
 
         if response.status_code == 200:
-            return response.json()
+            result = response.json()
+            st.session_state.prediction_result = result
+            # st.rerun()
+            return result
         elif response.status_code == 401:
             st.error("Your session has expired. Please log in again.")
             st.session_state.is_authenticated = False
