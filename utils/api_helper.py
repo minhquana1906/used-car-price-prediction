@@ -50,6 +50,9 @@ def preprocess_data(data: dict) -> pd.DataFrame:
     data["gearbox"] = 1 if data["gearbox"].lower() == "automatic" else 0
 
     data["age"] = datetime.now().year - data["yearOfRegistration"]
+    if data["age"] <= 0:
+        data["age"] = 1
+
     data.pop("yearOfRegistration")
 
     df = pd.DataFrame([data])
