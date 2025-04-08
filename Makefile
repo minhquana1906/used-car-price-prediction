@@ -53,7 +53,7 @@ ui: ## Run only the Streamlit frontend
 .PHONY: docker-up
 docker-up:
 	@echo "🚀 Docker compose up"
-	@docker compose -f docker-compose.yml up -d
+	@docker compose -f docker-compose.yaml up -d
 
 .PHONY: application
 application: install docker-up
