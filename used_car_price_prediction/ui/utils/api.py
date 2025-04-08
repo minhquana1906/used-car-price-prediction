@@ -29,7 +29,6 @@ def predict_price(data):
         if response.status_code == 200:
             result = response.json()
             st.session_state.prediction_result = result
-            # st.rerun()
             return result
         elif response.status_code == 401:
             st.error("Your session has expired. Please log in again.")

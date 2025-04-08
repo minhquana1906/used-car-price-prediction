@@ -208,23 +208,19 @@ def preprocess_pipeline(cfg: DictConfig):
     logger.info("Starting preprocessing pipeline...")
 
     try:
-        # Load and preprocess data
         data = load_dataset(cfg)
         data = drop_columns(data, cfg)
         data = convert_to_binary(data)
 
-        # Log column info for debugging
         logger.info(f"Available columns after preprocessing: {data.columns.tolist()}")
         logger.info(f"Sample data types: {data.dtypes}")
 
-        # Create and fit preprocessor
         preprocessor = create_preprocessor(cfg)
         logger.info("Fitting preprocessor to training data...")
         preprocessor.fit_transform(data)
         logger.success("Preprocessor fit and transformed successfully.")
 
         data = binary_to_category(data)
-        # Save outputs
         save_datasets(data, cfg)
 
         logger.success("Preprocessing completed successfully!")

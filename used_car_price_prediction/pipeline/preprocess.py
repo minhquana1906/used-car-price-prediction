@@ -48,7 +48,6 @@ def drop_columns(data: pd.DataFrame, cfg: DictConfig) -> pd.DataFrame:
     target = cfg.data.target
     col_to_drop = cfg.data.columns_to_drop
 
-    # Create `age` column before dropping `yearOfRegistration`
     logger.info("Creating `age` column...")
     data["age"] = datetime.now().year - data["yearOfRegistration"]
     logger.success("`age` column created successfully.")
@@ -141,7 +140,6 @@ def create_preprocessor(cfg: DictConfig) -> Pipeline:
 
     outlier_clipper = OutlierClipper(columns=outlier_features, factor=outlier_threshold)
 
-    # positive_transformer = FunctionTransformer(ensure_positive)
     boxcox_pipeline = Pipeline(
         steps=[
             ("boxcox_transform", PowerTransformer(method="box-cox", standardize=True)),
@@ -243,28 +241,23 @@ def preprocess_pipeline(cfg: DictConfig):
     logger.info("Starting preprocessing pipeline...")
 
     try:
-        # Load and preprocess data
         data = load_dataset(cfg)
         data = drop_columns(data, cfg)
         data = convert_to_binary(data)
 
-        # Log column info for debugging
         logger.info(f"Available columns after preprocessing: {data.columns.tolist()}")
         logger.info(f"Sample data types: {data.dtypes}")
 
-        # Split data
         X_train, X_test, y_train, y_test = split_data(data, cfg)
         logger.info(
             f"Training set shape: {X_train.shape}, Test set shape: {X_test.shape}"
         )
 
-        # Create and fit preprocessor
         preprocessor = create_preprocessor(cfg)
         logger.info("Fitting preprocessor to training data...")
         preprocessor.fit(X_train)
         logger.info("Preprocessor fitted successfully")
 
-        # Save outputs
         save_datasets(X_train, X_test, y_train, y_test, cfg)
         save_preprocessor(preprocessor, cfg)
 

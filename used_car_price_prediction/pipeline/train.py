@@ -106,7 +106,7 @@ class ProgressBarCallback(TrainingCallback):
         """Called after each iteration"""
         self.iteration += 1
         self.pbar.update(1)
-        return False  # Return False to continue training
+        return False
 
     def after_training(self, model):
         """Called after training"""
@@ -159,7 +159,6 @@ def train_model(model, preprocessor, X_train, y_train, X_test, y_test):
 
     y_pred = model.predict(X_test_processed)
 
-    # Calculate metrics
     metrics = {
         "R2": r2_score(y_test, y_pred),
         "MAE": mean_absolute_error(y_test, y_pred),
@@ -226,29 +225,24 @@ def train_pipline(cfg: DictConfig):
         ]
 
         with tqdm.tqdm(total=len(stages), desc="Training Progress") as progress_bar:
-            # Load data
             progress_bar.set_description("Loading Data")
             X_train, X_test, y_train, y_test = load_data(cfg)
             progress_bar.update(1)
 
-            # Load preprocessor
             progress_bar.set_description("Loading Preprocessor")
             preprocessor = load_preprocessor(cfg)
             progress_bar.update(1)
 
-            # Create XGBoost model
             progress_bar.set_description("Creating Model")
             xgb_model = create_xgboost_model(cfg)
             progress_bar.update(1)
 
-            # Train model
             progress_bar.set_description("Training Model")
             model_pipeline, metrics = train_model(
                 xgb_model, preprocessor, X_train, y_train, X_test, y_test
             )
             progress_bar.update(1)
 
-            # Save model
             progress_bar.set_description("Saving Model")
             save_model(model_pipeline, metrics, cfg)
             progress_bar.update(1)

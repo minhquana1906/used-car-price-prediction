@@ -29,15 +29,11 @@ target: price
 test_size: 0.2
 random_state: 15
 
-# Outlier processing
 outlier_features:
   - powerPS
-  # - kilometer
-  # - age
 outlier_method: IQR
-outlier_threshold: 1.5  # IQR multiplier
+outlier_threshold: 1.5
 
-# Features for preprocessing
 numerical_features:
   - powerPS
   - kilometer
@@ -53,5 +49,4 @@ categorical_features:
   - fuelType
   - brand
 
-# PCA settings
 pca_components: 0.95
