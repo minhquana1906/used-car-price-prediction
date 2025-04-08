@@ -18,7 +18,6 @@ def render_prediction_page(data):
     col1, col2 = st.columns(2)
 
     with col1:
-        # brand, model, vehicleType, fuelType, gearbox, notRepairedDamage
         st.subheader("Car Basic Information")
 
         brands = sorted(data["brand"].dropna().unique())
@@ -62,7 +61,6 @@ def render_prediction_page(data):
     with col2:
         st.subheader("Technical Specifications")
 
-        # powerPS, kilometer, yearOfRegistration
         min_power = int(filtered_data["powerPS"].min())
         max_power = int(min(filtered_data["powerPS"].max(), 500))
         selected_power = st.slider(
@@ -207,7 +205,6 @@ def render_prediction_page(data):
             st.markdown(f"**Age**: {calculated_age} years")
             st.markdown(f"**Kilometers**: {selected_km:,}")
 
-        # Add similar cars section
         top_k = 10
         st.subheader(f"Top {top_k} similar cars in the dataset")
 

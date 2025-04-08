@@ -11,7 +11,6 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("APP_DATABASE_URL")
 
-# SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -29,7 +28,6 @@ class User(Base):
     )
     created_at = Column(DateTime, default=func.now())
 
-    # Relationships
     subscription_plans = relationship("SubscriptionPlan", back_populates="users")
     api_usage = relationship("ApiUsage", back_populates="users")
 

@@ -68,7 +68,6 @@ async def lifespan(app: FastAPI):
         logger.error(f"Redis connection error: {e}")
         redis_client = None
 
-    # endpoint to start each time the server reloads
     yield
 
     logger.info("Shutting down API...")
@@ -214,7 +213,6 @@ def get_limits(
     current_user: User = Depends(get_current_user),
     db=Depends(get_db),
 ):
-    """Get the current user's subscription limits and usage statistics"""
 
     minute_limit, day_limit = get_subscription_limits(
         current_user.subscription_plan_id, db

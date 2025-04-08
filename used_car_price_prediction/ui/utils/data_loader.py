@@ -13,8 +13,8 @@ def load_data_from_csv():
     """Load and preprocess the dataset and visualization"""
     try:
         df = pd.read_csv(DATA_PATH)
-        return df
-        # return df.sample(30000)
+        # return df
+        return df.sample(10000)
     except FileNotFoundError:
         st.error("Dataset not found. Please check the path.")
         return pd.DataFrame()
@@ -24,7 +24,6 @@ def load_data_from_csv():
         return pd.DataFrame()
 
 
-# load data from database
 @st.cache_data()
 def load_data_from_db():
     try:
@@ -37,8 +36,8 @@ def load_data_from_db():
                        power_ps as powerPS, kilometer, year_of_registration as yearOfRegistration,
                        gearbox, not_repaired_damage as notRepairedDamage, price
                 FROM cars
-                WHERE year_of_registration >= 2010
-                LIMIT 1000
+                WHERE year_of_registration >= 2000
+                LIMIT 10000
             """
             )
             result = db.execute(query).fetchall()

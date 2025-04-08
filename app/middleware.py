@@ -93,7 +93,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
             if auth_header and auth_header.startswith("Bearer "):
                 token = auth_header.replace("Bearer ", "")
 
-                # Decode token
                 try:
                     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
                     username = payload.get("sub")
@@ -103,15 +102,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
                         user = db.query(User).filter(User.username == username).first()
 
                         if user:
-                            # Set user in request state
                             request.state.user = user
 
-                            # Set rate limit info for this user based on subscription
                             try:
                                 minute_limit, day_limit = get_subscription_limits(
                                     user.subscription_plan_id, db
                                 )
-                                # Set dynamically for the limiter to use
                                 request.state.dynamic_rate_limit = (
                                     f"{minute_limit}/minute;{day_limit}/day"
                                 )

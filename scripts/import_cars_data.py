@@ -77,7 +77,6 @@ def import_data_to_db(cfg):
             for i in range(0, total_records, batch_size):
                 batch = db_data.iloc[i : i + batch_size]
 
-                # Create Car objects from DataFrame
                 car_objects = []
                 for _, row in batch.iterrows():
                     car = Car(

@@ -21,9 +21,7 @@ TEST_PASSWORD = "123123123"
 TEST_EMAIL = "test@lms.utc.edu.vn"
 TEST_SUBSCRIPTION_PLAN_ID = 1
 
-# Ensure log folder exists
 os.makedirs("logs", exist_ok=True)
-os.makedirs("test_results", exist_ok=True)
 
 logger.add("logs/test_limiter.log", rotation="100 MB", level="INFO")
 

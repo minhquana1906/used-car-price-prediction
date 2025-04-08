@@ -88,7 +88,6 @@ def objective(trial, X, y, cv, cfg):
 
     model = XGBRegressor(**param)
 
-    # Cross-validation
     kfold = KFold(n_splits=cv, shuffle=True, random_state=42)
     scores = cross_val_score(model, X, y, cv=kfold, scoring=cfg.tuning.scoring)
 
@@ -100,29 +99,21 @@ def tune_hyperparameters(cfg, X_train, y_train):
     """Tune hyperparameters for XGBoost model"""
     logger.info("Starting XGBoost hyperparameter tuning")
 
-    # Load config parameters
     cv_folds = cfg.tuning.cv_folds
     n_trials = cfg.tuning.n_trials
     timeout = cfg.tuning.timeout
 
-    # Log Optuna configuration
     logger.info(
         f"Optuna configuration: cv_folds={cv_folds}, n_trials={n_trials}, timeout={timeout}s"
     )
 
-    # Wrapper for objective function
     def objective_wrapper(trial):
         score = objective(trial, X_train, y_train, cv_folds, cfg)
-        # Log each trial's results
-        logger.info(
-            f"Trial {trial.number}: {cfg.tuning.scoring}={score:.4f}, params={trial.params}"
-        )
+        logger.info(f"Trial {trial.number}: MAE = {score:.4f}, params={trial.params}")
         return score
 
-    # create study
     study = optuna.create_study(direction="maximize")
 
-    # Optimize without progress bar
     logger.info(f"Starting optimization with {n_trials} trials (timeout: {timeout}s)")
     study.optimize(
         objective_wrapper,
@@ -130,18 +121,15 @@ def tune_hyperparameters(cfg, X_train, y_train):
         timeout=timeout,
     )
 
-    # Get best parameters and score
     best_params = study.best_params
     best_score = study.best_value
     best_trial = study.best_trial
 
-    # Log results
     logger.info(f"Optimization completed. Total trials: {len(study.trials)}")
     logger.info(f"Best trial: #{best_trial.number}")
-    logger.info(f"Best {cfg.tuning.scoring}: {best_score:.4f}")
+    logger.info(f"Best MAE: {-best_score:.4f}")
     logger.info(f"Best parameters: {best_params}")
 
-    # save study and best parameters
     results_dir = os.path.join(cfg.paths.logs_path, "tuning")
     os.makedirs(results_dir, exist_ok=True)
 
@@ -149,10 +137,8 @@ def tune_hyperparameters(cfg, X_train, y_train):
     study_path = os.path.join(results_dir, f"xgboost_study_{timestamp}.pkl")
     params_path = os.path.join(results_dir, f"xgboost_best_params_{timestamp}.json")
 
-    # save study
     joblib.dump(study, study_path)
 
-    # save best parameters
     import json
 
     with open(params_path, "w") as f:
@@ -224,15 +210,12 @@ def save_model_and_metrics(model, metrics, cfg):
     os.makedirs(models_dir, exist_ok=True)
     os.makedirs(metrics_dir, exist_ok=True)
 
-    # Đường dẫn lưu model
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     model_path = os.path.join(models_dir, f"xgboost_tuned_{timestamp}.pkl")
 
-    # Lưu model
     logger.info(f"Saving model to {model_path}")
     dump(model, model_path)
 
-    # Lưu metrics
     metrics_path = os.path.join(metrics_dir, f"xgboost_metrics_{timestamp}.json")
 
     with open(metrics_path, "w") as f:
@@ -248,26 +231,20 @@ def main(cfg: DictConfig):
     logger.info("Starting XGBoost hyperparameter tuning")
 
     try:
-        # Load data
         X_train, X_test, y_train, y_test = load_data(cfg)
 
-        # Load preprocessor
         preprocessor = load_preprocessor(cfg)
 
-        # Transform data
         logger.info("Applying preprocessing to data")
         X_train_processed = preprocessor.transform(X_train)
         X_test_processed = preprocessor.transform(X_test)
 
-        # Tune hyperparameters
         best_params = tune_hyperparameters(cfg, X_train_processed, y_train)
 
-        # Train and evaluate model with best parameters
         model, metrics = train_and_evaluate_model(
             X_train_processed, X_test_processed, y_train, y_test, best_params, cfg
         )
 
-        # Save model and metrics
         save_model_and_metrics(model, metrics, cfg)
 
         logger.success("XGBoost hyperparameter tuning completed successfully!")

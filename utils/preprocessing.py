@@ -13,7 +13,6 @@ class OutlierClipper(BaseEstimator, TransformerMixin):
         self.bounds = {}
 
     def fit(self, X, y=None):
-        # Find the lower and upper bounds for each column
         for col in self.columns:
             if col in X.columns:
                 Q1 = X[col].quantile(0.25)
@@ -32,7 +31,6 @@ class OutlierClipper(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         X_copy = X.copy()
 
-        # Clip the outliers
         for col in self.columns:
             if col in X_copy.columns and col in self.bounds:
                 lower, upper = self.bounds[col]

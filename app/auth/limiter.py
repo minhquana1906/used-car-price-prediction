@@ -95,13 +95,11 @@ def get_subscription_limits(
         ]
         return minute_limit, daily_limit
 
-    # not found in cache, return default limits
     if subscription_plan_id in SUBSCRIPTION_LIMITS:
         minute_limit = SUBSCRIPTION_LIMITS[subscription_plan_id]["limit_per_minute"]
         daily_limit = SUBSCRIPTION_LIMITS[subscription_plan_id]["limit_per_day"]
         return minute_limit, daily_limit
 
-    # unknown => return default limits
     return (
         SUBSCRIPTION_LIMITS[1]["limit_per_minute"],
         SUBSCRIPTION_LIMITS[1]["limit_per_day"],
@@ -141,7 +139,6 @@ def rate_limit_request(
                 detail=f"Daily request limit ({day_limit}) exceeded. Please try again tomorrow.",
             )
 
-        # check minute usage
         result = db.execute(
             select(func.count()).where(
                 ApiUsage.user_id == current_user.id,

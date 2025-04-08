@@ -127,9 +127,6 @@ def logout(cookies):
     if "api_usage_data" in st.session_state:
         del st.session_state.api_usage_data
 
-    # if "prediction_result" in st.session_state:
-    #     del st.session_state.prediction_result
-
     st.session_state.is_authenticated = False
 
     cookies.save()

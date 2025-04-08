@@ -131,7 +131,6 @@ def save_predictions(
     predictions_dir = cfg.paths.predictions_path
     os.makedirs(predictions_dir, exist_ok=True)
 
-    # save predictions
     predictions_df = X_test.copy()
     predictions_df[cfg.data.target + "_true"] = y_test.values
     predictions_df[cfg.data.target + "_pred"] = y_pred
@@ -142,11 +141,9 @@ def save_predictions(
     )
     predictions_df["error_abs"] = predictions_df["error"].abs()
 
-    # save predictions
     predictions_path = os.path.join(predictions_dir, "predictions.csv")
     predictions_df.to_csv(predictions_path, index=False)
 
-    # save metrics
     metrics_path = os.path.join(predictions_dir, "prediction_metrics.csv")
     metrics_df = pd.DataFrame([metrics])
     metrics_df.to_csv(metrics_path, index=False)
@@ -154,7 +151,6 @@ def save_predictions(
     logger.success(f"Predictions saved to {predictions_path}")
     logger.success(f"Metrics saved to {metrics_path}")
 
-    # Log 5 samples with highest prediction error
     logger.info("Top 5 samples with highest absolute error:")
     top_errors = predictions_df.sort_values("error_abs", ascending=False).head(5)
     for _, row in top_errors.iterrows():
@@ -178,27 +174,22 @@ def evaluate_pipeline(cfg: DictConfig):
         ]
 
         with tqdm.tqdm(total=len(stages), desc="Prediction Progress") as progress_bar:
-            # Load model
             progress_bar.set_description("Loading Model")
             model = load_model(cfg)
             progress_bar.update(1)
 
-            # Load test data
             progress_bar.set_description("Loading Test Data")
             X_test, y_test = load_test_data(cfg)
             progress_bar.update(1)
 
-            # Make predictions
             progress_bar.set_description("Making Predictions")
             y_pred = predict(model, X_test)
             progress_bar.update(1)
 
-            # Evaluate predictions
             progress_bar.set_description("Evaluating Predictions")
             metrics = evaluate_predictions(y_test, y_pred)
             progress_bar.update(1)
 
-            # Save results
             progress_bar.set_description("Saving Results")
             save_predictions(y_pred, X_test, y_test, metrics, cfg)
             progress_bar.update(1)

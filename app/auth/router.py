@@ -55,7 +55,6 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
         )
 
 
-# Authentication route using OAuth2PasswordRequestForm
 @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
 def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
