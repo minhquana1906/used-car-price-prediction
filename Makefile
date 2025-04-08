@@ -50,8 +50,13 @@ ui: ## Run only the Streamlit frontend
 	@echo "🚀 Running Streamlit frontend service"
 	@uv run streamlit run used_car_price_prediction/ui/main.py
 
+.PHONY: docker-up
+docker-up:
+	@echo "🚀 Docker compose up"
+	@docker compose -f docker-compose.yml up -d
+
 .PHONY: application
-application: api ui
+application: install docker-up
 
 
 .PHONY: help
