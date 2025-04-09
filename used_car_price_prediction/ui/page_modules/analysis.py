@@ -196,46 +196,44 @@ def render_analysis_page(data):
         numerical_cols = ["price", "powerPS", "kilometer", "age"]
         corr = data[numerical_cols].corr()
 
-        fig = px.imshow(
-            corr,
-            text_auto=True,
-            color_continuous_scale="RdBu_r",
-            title="Correlation Heatmap",
-            labels={"color": "Correlation"},
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        try:
+            feature_x = st.selectbox(
+                "Select X-axis Feature",
+                options=[
+                    "powerPS",
+                    "kilometer",
+                    "age",
+                    "vehicleType",
+                    "fuelType",
+                    "gearbox",
+                ],
+                index=0,
+            )
 
-        # Feature relationships
-        feature_x = st.selectbox(
-            "Select X-axis Feature",
-            options=[
-                "powerPS",
-                "kilometer",
-                "age",
-                "vehicleType",
-                "fuelType",
-                "gearbox",
-            ],
-            index=0,
-        )
+            feature_y = st.selectbox(
+                "Select Y-axis Feature",
+                options=["price", "powerPS", "kilometer", "age"],
+                index=0,
+            )
 
-        feature_y = st.selectbox(
-            "Select Y-axis Feature",
-            options=["price", "powerPS", "kilometer", "age"],
-            index=0,
-        )
+            color_by = st.selectbox(
+                "Color by",
+                options=[
+                    "vehicleType",
+                    "fuelType",
+                    "gearbox",
+                    "brand",
+                    "notRepairedDamage",
+                ],
+                index=0,
+            )
 
-        color_by = st.selectbox(
-            "Color by",
-            options=[
-                "vehicleType",
-                "fuelType",
-                "gearbox",
-                "brand",
-                "notRepairedDamage",
-            ],
-            index=0,
-        )
+            if feature_x == feature_y:
+                st.warning("X-axis and Y-axis features cannot be the same.")
+                return
+        except ValueError:
+            st.error("Invalid selection. Please choose valid features.")
+            return
 
         # Create appropriate plot based on feature types
         if feature_x in ["vehicleType", "fuelType", "gearbox"]:
